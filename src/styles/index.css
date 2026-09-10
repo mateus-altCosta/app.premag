@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #15181b;
+  color: #15181b;
+  font-family: Archivo, system-ui, sans-serif;
+}
