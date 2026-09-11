@@ -12,6 +12,7 @@ import PendenciasPage from './pages/Pendencias/PendenciasPage'
 import DiarioPage from './pages/Diario/DiarioPage'
 import AlertasPage from './pages/Alertas/AlertasPage'
 import RelatoriosPage from './pages/Relatorios/RelatoriosPage'
+import FechamentoPage from './pages/Fechamento/FechamentoPage'
 import { isLoggedIn } from './app/services/premag/session'
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/diario" element={<DiarioPage />} />
         <Route path="/alertas" element={<AlertasPage />} />
         <Route path="/relatorios" element={<RelatoriosPage />} />
+        <Route path="/fechamento" element={<FechamentoPage />} />
       </Route>
       <Route path="*" element={<Navigate to={isLoggedIn() ? '/inicio' : '/login'} replace />} />
     </Routes>

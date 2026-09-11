@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { authService } from '../../app/services/premag/authService.service'
 import { api } from '../../app/services/premag/api.service'
 import { appConfig, getHealthUrl } from '../../config/app.config'
+import { ativarPush } from '../../app/services/premag/push'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -25,6 +26,7 @@ export default function LoginPage() {
     setEnviando(true)
     try {
       await authService.login(usuario.trim(), senha)
+      await ativarPush()
       navigate('/inicio', { replace: true })
     } catch {
       setErro('Usuário ou senha inválidos.')

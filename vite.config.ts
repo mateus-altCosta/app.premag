@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       manifest: {
         name: 'PREMAG Apropriação',
         short_name: 'PREMAG',
@@ -19,17 +23,10 @@ export default defineConfig({
         theme_color: '#15181B',
         background_color: '#15181B',
       },
-      workbox: {
-        navigateFallback: 'index.html',
-        navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkOnly',
-          },
-        ],
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },
-      devOptions: { enabled: false },
+      devOptions: { enabled: true, type: 'module' },
     }),
   ],
   server: {

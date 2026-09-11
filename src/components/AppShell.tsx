@@ -7,7 +7,9 @@ import { contarFila, sincronizarFila } from '../app/services/premag/sync.service
 import { estaOnline, onFila, onRede, verificarAlcance } from '../app/services/premag/rede'
 import { operacaoService } from '../app/services/premag/operacao.service'
 
-type AbaIcone = 'equipe' | 'obras' | 'diario' | 'alertas' | 'relatorios'
+import { ativarPush } from '../app/services/premag/push'
+
+type AbaIcone = 'equipe' | 'obras' | 'diario' | 'alertas' | 'relatorios' | 'dia'
 
 function itemClass(ativo: boolean) {
   return `flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[9px] uppercase tracking-wider ${
@@ -58,6 +60,14 @@ function IconeAba({ tipo }: { tipo: AbaIcone }) {
       </svg>
     )
   }
+  if (tipo === 'dia') {
+    return (
+      <svg {...props}>
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M8 3v4M16 3v4M4 11h16" />
+      </svg>
+    )
+  }
   return (
     <svg {...props}>
       <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
@@ -82,6 +92,7 @@ export default function AppShell() {
     authService.me().then(setMe).catch(() => undefined)
     contarFila().then(setFila).catch(() => undefined)
     operacaoService.ocorrencias(true).then((l) => setAlertas(l.length)).catch(() => undefined)
+    void ativarPush()
     const offF = onFila(() => contarFila().then(setFila).catch(() => undefined))
     const offR = onRede(() => {
       const ok = estaOnline()
@@ -105,6 +116,7 @@ export default function AppShell() {
     ? [
         { to: equipeHome ? `/equipes/${equipeHome}` : '/equipes', label: 'Equipe', icone: 'equipe' },
         { to: '/diario', label: 'Diário', icone: 'diario' },
+        { to: '/fechamento', label: 'Dia', icone: 'dia' },
         { to: '/alertas', label: 'Alertas', icone: 'alertas' },
       ]
     : diretoria
@@ -112,14 +124,14 @@ export default function AppShell() {
           { to: '/equipes', label: 'Equipes', icone: 'equipe' },
           { to: '/obras', label: 'Obras', icone: 'obras' },
           { to: '/relatorios', label: 'Relatórios', icone: 'relatorios' },
-          { to: '/diario', label: 'Diário', icone: 'diario' },
+          { to: '/fechamento', label: 'Dia', icone: 'dia' },
         ]
       : gerir
         ? [
             { to: '/equipes', label: 'Equipes', icone: 'equipe' },
             { to: '/obras', label: 'Obras', icone: 'obras' },
             { to: '/diario', label: 'Diário', icone: 'diario' },
-            { to: '/alertas', label: 'Alertas', icone: 'alertas' },
+            { to: '/fechamento', label: 'Dia', icone: 'dia' },
           ]
         : [
             { to: '/equipes', label: 'Equipes', icone: 'equipe' },

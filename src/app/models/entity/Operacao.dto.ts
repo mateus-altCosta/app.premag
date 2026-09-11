@@ -83,3 +83,20 @@ export interface ImportacaoResultadoDto {
   ignorados: number
   avisos: string[]
 }
+
+export interface FechamentoDiaDto {
+  data: string
+  equipeId?: string | null
+  escopo: string
+  fechado: boolean
+  fechadoPorCalendario: boolean
+  fechadoEm?: string | null
+  fechadoPorNome?: string | null
+  reabertoEm?: string | null
+  motivoReabertura?: string | null
+  diasFechamento: number
+  apontamentosAbertos: number
+  presentesSemServico: number
+  fotos: number
+  horasApontadas: number
+}

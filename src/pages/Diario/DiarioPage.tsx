@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { DiarioDto } from '../../app/models/entity/Operacao.dto'
 import { mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
@@ -117,6 +118,13 @@ export default function DiarioPage() {
           </>
         )}
       </div>
+
+      <Link
+        to="/fechamento"
+        className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
+      >
+        Fechar o dia
+      </Link>
 
       <button
         type="button"

@@ -9,6 +9,7 @@ export type {
 export type {
   DiarioDto,
   FotoDto,
+  FechamentoDiaDto,
   ImportacaoResultadoDto,
   OcorrenciaDto,
   RelatorioDto,

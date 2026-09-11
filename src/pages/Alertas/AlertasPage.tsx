@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import type { OcorrenciaDto } from '../../app/models/entity/Operacao.dto'
 import { mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
+import { ativarPush } from '../../app/services/premag/push'
 
 export default function AlertasPage() {
   const [lista, setLista] = useState<OcorrenciaDto[]>([])
   const [erro, setErro] = useState<string | null>(null)
   const [justif, setJustif] = useState<Record<string, string>>({})
   const [enviando, setEnviando] = useState<string | null>(null)
+  const [pushMsg, setPushMsg] = useState<string | null>(null)
 
   async function carregar() {
     setLista(await operacaoService.ocorrencias(true))
@@ -77,6 +79,25 @@ export default function AlertasPage() {
           Colaborador presente e fora de qualquer frente por mais de 60 minutos corridos gera notificação para Gerência
           e Diretoria. O relógio desconta o intervalo e ignora faltas, férias e afastados.
         </p>
+        <button
+          type="button"
+          className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ambar"
+          onClick={async () => {
+            const r = await ativarPush()
+            setPushMsg(
+              r === 'ok'
+                ? 'Notificações ativas neste aparelho.'
+                : r === 'negado'
+                  ? 'O navegador bloqueou as notificações.'
+                  : r === 'desligado'
+                    ? 'Push ainda não está ligado neste ambiente.'
+                    : 'Este aparelho não recebe push (use o app instalado em HTTPS).',
+            )
+          }}
+        >
+          Ativar notificações neste aparelho
+        </button>
+        {pushMsg && <p className="mt-2 text-sm text-[#9aa2a9]">{pushMsg}</p>}
       </div>
       {erro && <p className="mt-3 text-sm text-red-700">{erro}</p>}
       {lista.length === 0 && !erro && <p className="mt-4 rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">Nada pendente agora.</p>}

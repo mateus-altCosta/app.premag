@@ -3,6 +3,7 @@ import { clienteUuid } from './jornada'
 import type {
   DiarioDto,
   FotoDto,
+  FechamentoDiaDto,
   ImportacaoResultadoDto,
   OcorrenciaDto,
   RelatorioDto,
@@ -96,4 +97,13 @@ export const operacaoService = {
     fd.append('arquivo', arquivo)
     return api.post<ImportacaoResultadoDto>('/importacoes/colaboradores', fd, multipart).then((r) => r.data)
   },
+
+  fechamento: (params?: { data?: string; equipeId?: string }) =>
+    api.get<FechamentoDiaDto>('/fechamentos', { params }).then((r) => r.data),
+
+  fecharDia: (dto: { data?: string; equipeId?: string | null }) =>
+    api.post<FechamentoDiaDto>('/fechamentos/fechar', dto).then((r) => r.data),
+
+  reabrirDia: (dto: { data?: string; equipeId?: string | null; motivoReabertura: string }) =>
+    api.post<FechamentoDiaDto>('/fechamentos/reabrir', dto).then((r) => r.data),
 }
