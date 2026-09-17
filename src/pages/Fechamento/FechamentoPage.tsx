@@ -92,6 +92,11 @@ export default function FechamentoPage() {
         <Link to="/diario" className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-ambar">
           Abrir diário do dia
         </Link>
+        {gerir && (
+          <Link to="/historico" className="mt-2 block font-mono text-[10px] uppercase tracking-wider text-ambar">
+            Histórico
+          </Link>
+        )}
       </div>
 
       {gerir && (

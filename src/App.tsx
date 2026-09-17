@@ -13,6 +13,8 @@ import DiarioPage from './pages/Diario/DiarioPage'
 import AlertasPage from './pages/Alertas/AlertasPage'
 import RelatoriosPage from './pages/Relatorios/RelatoriosPage'
 import FechamentoPage from './pages/Fechamento/FechamentoPage'
+import HistoricoPage from './pages/Historico/HistoricoPage'
+import ContaPage from './pages/Conta/ContaPage'
 import { isLoggedIn } from './app/services/premag/session'
 
 export default function App() {
@@ -40,6 +42,8 @@ export default function App() {
         <Route path="/alertas" element={<AlertasPage />} />
         <Route path="/relatorios" element={<RelatoriosPage />} />
         <Route path="/fechamento" element={<FechamentoPage />} />
+        <Route path="/historico" element={<HistoricoPage />} />
+        <Route path="/conta" element={<ContaPage />} />
       </Route>
       <Route path="*" element={<Navigate to={isLoggedIn() ? '/inicio' : '/login'} replace />} />
     </Routes>

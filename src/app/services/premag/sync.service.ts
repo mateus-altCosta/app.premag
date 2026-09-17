@@ -2,6 +2,7 @@ import { api } from './api.service'
 import { getDispositivoId } from './session'
 import { filaStore, type ItemFila } from './idb'
 import { avisarFila, estaOnline, isFalhaDeRede, marcarAlcanceApi } from './rede'
+import { operacaoService } from './operacao.service'
 
 export interface ResultadoItemLote {
   indice: number
@@ -43,27 +44,56 @@ export async function sincronizarFila(): Promise<LoteResultado | null> {
 
   emCurso = true
   try {
-    const corpo = {
-      dispositivoId: getDispositivoId(),
-      itens: itens.map((i) => ({
-        tipo: i.tipo,
-        apontamentoId: i.apontamentoId,
-        apontamentoClienteUuid: i.apontamentoClienteUuid,
-        iniciar: i.iniciar,
-        encerrar: i.encerrar,
-        producao: i.producao,
-      })),
+    const fotos = itens.filter((i) => i.tipo === 'foto')
+    const resto = itens.filter((i) => i.tipo !== 'foto')
+
+    if (resto.length > 0) {
+      const corpo = {
+        dispositivoId: getDispositivoId(),
+        itens: resto.map((i) => ({
+          tipo: i.tipo,
+          apontamentoId: i.apontamentoId,
+          apontamentoClienteUuid: i.apontamentoClienteUuid,
+          iniciar: i.iniciar,
+          encerrar: i.encerrar,
+          producao: i.producao,
+        })),
+      }
+      const { data } = await api.post<LoteResultado>('/sync/lote', corpo)
+      marcarAlcanceApi(true)
+      for (const r of data.resultados ?? []) {
+        const local = resto[r.indice]
+        if (!local?.id) continue
+        if (r.aceito) await filaStore.remover(local.id)
+        else await filaStore.marcarErro(local.id, r.detalhe || r.codigo || 'Rejeitado')
+      }
     }
-    const { data } = await api.post<LoteResultado>('/sync/lote', corpo)
-    marcarAlcanceApi(true)
-    for (const r of data.resultados ?? []) {
-      const local = itens[r.indice]
-      if (!local?.id) continue
-      if (r.aceito) await filaStore.remover(local.id)
-      else await filaStore.marcarErro(local.id, r.detalhe || r.codigo || 'Rejeitado')
+
+    for (const f of fotos) {
+      if (!f.id || !f.jpeg || !f.foto) continue
+      try {
+        await operacaoService.enviarFoto({
+          jpeg: f.jpeg,
+          frenteId: f.foto.frenteId,
+          tipo: f.foto.tipo as 'Avanco' | 'Ocorrencia' | 'RecebimentoMaterial',
+          colaboradorId: f.foto.colaboradorId,
+          apontamentoId: f.foto.apontamentoId,
+          quantidade: f.foto.quantidade,
+          observacao: f.foto.observacao,
+          clienteUuid: f.foto.clienteUuid,
+        })
+        await filaStore.remover(f.id)
+      } catch (err) {
+        if (isFalhaDeRede(err)) {
+          marcarAlcanceApi(false)
+          throw err
+        }
+        await filaStore.marcarErro(f.id, 'Foto rejeitada')
+      }
     }
+
     avisarFila()
-    return data
+    return { id: '', itensRecebidos: itens.length, itensAceitos: 0, itensRejeitados: 0, resultados: [] }
   } catch (err) {
     if (isFalhaDeRede(err)) marcarAlcanceApi(false)
     throw err

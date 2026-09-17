@@ -100,3 +100,15 @@ export interface FechamentoDiaDto {
   fotos: number
   horasApontadas: number
 }
+
+export interface AuditLogDto {
+  id: string
+  entidade: string
+  entidadeId: string
+  acao: string
+  antes?: string | null
+  depois?: string | null
+  usuarioId: string
+  usuarioNome: string
+  em: string
+}

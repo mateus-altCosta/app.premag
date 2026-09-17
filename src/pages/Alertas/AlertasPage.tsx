@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { OcorrenciaDto } from '../../app/models/entity/Operacao.dto'
 import { mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
-import { ativarPush } from '../../app/services/premag/push'
+import { ativarPush, desligarPush } from '../../app/services/premag/push'
 
 export default function AlertasPage() {
   const [lista, setLista] = useState<OcorrenciaDto[]>([])
@@ -96,6 +96,16 @@ export default function AlertasPage() {
           }}
         >
           Ativar notificações neste aparelho
+        </button>
+        <button
+          type="button"
+          className="mt-2 block font-mono text-[10px] uppercase tracking-wider text-[#9aa2a9]"
+          onClick={async () => {
+            await desligarPush()
+            setPushMsg('Notificações desligadas neste aparelho.')
+          }}
+        >
+          Desligar notificações neste aparelho
         </button>
         {pushMsg && <p className="mt-2 text-sm text-[#9aa2a9]">{pushMsg}</p>}
       </div>

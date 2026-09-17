@@ -46,3 +46,17 @@ export async function ativarPush(): Promise<'ok' | 'sem-suporte' | 'negado' | 'd
   })
   return 'ok'
 }
+
+export async function desligarPush(): Promise<void> {
+  const reg = await registroSw()
+  const sub = await reg?.pushManager.getSubscription()
+  if (sub) {
+    const json = sub.toJSON()
+    try {
+      await api.post('/push/desinscrever', { endpoint: json.endpoint, p256dh: json.keys?.p256dh, auth: json.keys?.auth })
+    } catch {
+      /* encerra local mesmo se a API falhar */
+    }
+    await sub.unsubscribe()
+  }
+}

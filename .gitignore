@@ -1,5 +1,21 @@
+# Dependências e build (não sobem para o GitHub)
 node_modules
 dist
+dev-dist
 .vite
 *.local
 .env
+.env.*
+!.env.example
+
+# Logs e cobertura
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json

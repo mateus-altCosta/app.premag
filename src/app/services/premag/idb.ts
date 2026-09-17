@@ -1,5 +1,5 @@
 const DB_NOME = 'premag'
-const DB_VERSAO = 1
+const DB_VERSAO = 2
 
 function abrir(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -66,7 +66,7 @@ export const kv = {
 
 export interface ItemFila {
   id?: number
-  tipo: 'iniciar' | 'encerrar' | 'producao'
+  tipo: 'iniciar' | 'encerrar' | 'producao' | 'foto'
   criadoEm: string
   tentativas: number
   erro?: string | null
@@ -75,6 +75,16 @@ export interface ItemFila {
   iniciar?: Record<string, unknown>
   encerrar?: Record<string, unknown>
   producao?: Record<string, unknown>
+  jpeg?: Blob
+  foto?: {
+    frenteId: string
+    tipo: string
+    colaboradorId?: string | null
+    apontamentoId?: string | null
+    quantidade?: string
+    observacao?: string
+    clienteUuid: string
+  }
 }
 
 export const filaStore = {

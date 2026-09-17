@@ -4,6 +4,7 @@ import type {
   DiarioDto,
   FotoDto,
   FechamentoDiaDto,
+  AuditLogDto,
   ImportacaoResultadoDto,
   OcorrenciaDto,
   RelatorioDto,
@@ -45,9 +46,10 @@ export const operacaoService = {
     apontamentoId?: string | null
     quantidade?: string
     observacao?: string
+    clienteUuid?: string
   }) => {
     const fd = new FormData()
-    fd.append('clienteUuid', clienteUuid())
+    fd.append('clienteUuid', opts.clienteUuid || clienteUuid())
     fd.append('frenteId', opts.frenteId)
     fd.append('tipo', opts.tipo)
     if (opts.colaboradorId) fd.append('colaboradorId', opts.colaboradorId)
@@ -106,4 +108,6 @@ export const operacaoService = {
 
   reabrirDia: (dto: { data?: string; equipeId?: string | null; motivoReabertura: string }) =>
     api.post<FechamentoDiaDto>('/fechamentos/reabrir', dto).then((r) => r.data),
+
+  historico: (take = 80) => api.get<AuditLogDto[]>('/historico', { params: { take } }).then((r) => r.data),
 }

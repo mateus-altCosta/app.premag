@@ -9,6 +9,7 @@ function rotulo(tipo: string) {
   if (tipo === 'iniciar') return 'Início de serviço'
   if (tipo === 'encerrar') return 'Encerramento'
   if (tipo === 'producao') return 'Quantidade da frente'
+  if (tipo === 'foto') return 'Foto do diário'
   return tipo
 }
 

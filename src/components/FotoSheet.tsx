@@ -5,6 +5,9 @@ import type { TipoFoto } from '../app/models/entity/Operacao.dto'
 import { comprimirJpeg } from '../app/services/premag/jpeg'
 import { mensagemErro } from '../app/services/premag/cadastro.service'
 import { operacaoService } from '../app/services/premag/operacao.service'
+import { isFalhaDeRede } from '../app/services/premag/rede'
+import { enfileirar } from '../app/services/premag/sync.service'
+import { clienteUuid } from '../app/services/premag/jornada'
 
 const TIPOS: { id: TipoFoto; label: string }[] = [
   { id: 'Avanco', label: 'Avanço' },
@@ -71,6 +74,23 @@ export default function FotoSheet({
       })
       onOk()
     } catch (err) {
+      if (isFalhaDeRede(err)) {
+        await enfileirar({
+          tipo: 'foto',
+          jpeg: blob,
+          foto: {
+            frenteId,
+            tipo,
+            colaboradorId,
+            apontamentoId,
+            quantidade: tipo === 'Avanco' ? qtd : undefined,
+            observacao: obs,
+            clienteUuid: clienteUuid(),
+          },
+        })
+        onOk()
+        return
+      }
       setErro(mensagemErro(err, 'Não foi possível anexar a foto.'))
     } finally {
       setEnviando(false)

@@ -176,6 +176,13 @@ export default function AppShell() {
               </span>
               <button
                 type="button"
+                onClick={() => navigate('/conta')}
+                className="border border-[#3d4348] px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-aco"
+              >
+                Conta
+              </button>
+              <button
+                type="button"
                 onClick={sair}
                 className="border border-[#3d4348] px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-aco"
               >
