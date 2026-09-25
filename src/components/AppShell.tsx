@@ -82,6 +82,10 @@ export default function AppShell() {
   const [online, setOnline] = useState(estaOnline())
   const [fila, setFila] = useState(0)
   const [alertas, setAlertas] = useState(0)
+  const [instalarEv, setInstalarEv] = useState<{ prompt: () => Promise<void> } | null>(null)
+  const [esconderInstalar, setEsconderInstalar] = useState(
+    () => sessionStorage.getItem('premag-instalar') === '1' || window.matchMedia('(display-mode: standalone)').matches,
+  )
   const perfil = me?.perfil ?? session?.perfil
   const encarregado = ehEncarregado(perfil)
   const gerir = podeGerir(perfil)
@@ -93,6 +97,12 @@ export default function AppShell() {
     contarFila().then(setFila).catch(() => undefined)
     operacaoService.ocorrencias(true).then((l) => setAlertas(l.length)).catch(() => undefined)
     void ativarPush()
+    const onInstalar = (e: Event) => {
+      e.preventDefault()
+      const ev = e as Event & { prompt: () => Promise<void> }
+      setInstalarEv(ev)
+    }
+    window.addEventListener('beforeinstallprompt', onInstalar)
     const offF = onFila(() => contarFila().then(setFila).catch(() => undefined))
     const offR = onRede(() => {
       const ok = estaOnline()
@@ -104,6 +114,7 @@ export default function AppShell() {
     return () => {
       offF()
       offR()
+      window.removeEventListener('beforeinstallprompt', onInstalar)
     }
   }, [])
 
@@ -202,6 +213,41 @@ export default function AppShell() {
         </div>
       </header>
       <main className="flex-1 px-4 pb-24 pt-4">
+        {!esconderInstalar && (
+          <div className="mb-3 rounded border border-ambar/50 bg-ambar/10 p-3">
+            <p className="text-sm text-grafite">
+              {instalarEv
+                ? 'Instale o PREMAG na tela inicial para usar como aplicativo.'
+                : 'No celular: menu do navegador → Adicionar à tela inicial.'}
+            </p>
+            <div className="mt-2 flex gap-3">
+              {instalarEv && (
+                <button
+                  type="button"
+                  className="font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
+                  onClick={async () => {
+                    await instalarEv.prompt()
+                    setInstalarEv(null)
+                    sessionStorage.setItem('premag-instalar', '1')
+                    setEsconderInstalar(true)
+                  }}
+                >
+                  Instalar
+                </button>
+              )}
+              <button
+                type="button"
+                className="font-mono text-[10px] uppercase tracking-wider text-aco"
+                onClick={() => {
+                  sessionStorage.setItem('premag-instalar', '1')
+                  setEsconderInstalar(true)
+                }}
+              >
+                Agora não
+              </button>
+            </div>
+          </div>
+        )}
         <Outlet />
       </main>
       <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t-2 border-ambar bg-grafite pb-[env(safe-area-inset-bottom)]">

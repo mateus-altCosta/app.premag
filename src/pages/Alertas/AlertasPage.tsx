@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import type { MotivoParadaDto } from '../../app/models/entity/Cadastro.dto'
 import type { OcorrenciaDto } from '../../app/models/entity/Operacao.dto'
-import { mensagemErro } from '../../app/services/premag/cadastro.service'
+import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import { ativarPush, desligarPush } from '../../app/services/premag/push'
 
@@ -8,6 +9,9 @@ export default function AlertasPage() {
   const [lista, setLista] = useState<OcorrenciaDto[]>([])
   const [erro, setErro] = useState<string | null>(null)
   const [justif, setJustif] = useState<Record<string, string>>({})
+  const [gerar, setGerar] = useState<Record<string, boolean>>({})
+  const [motivo, setMotivo] = useState<Record<string, string>>({})
+  const [motivos, setMotivos] = useState<MotivoParadaDto[]>([])
   const [enviando, setEnviando] = useState<string | null>(null)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
 
@@ -17,6 +21,7 @@ export default function AlertasPage() {
 
   useEffect(() => {
     carregar().catch((e) => setErro(mensagemErro(e, 'Não foi possível carregar os alertas.')))
+    cadastroService.catalogos().then((c) => setMotivos(c.motivosParada)).catch(() => undefined)
   }, [])
 
   const esc2 = lista.filter((a) => a.severidade === 2)
@@ -26,7 +31,10 @@ export default function AlertasPage() {
     setEnviando(id)
     setErro(null)
     try {
-      await operacaoService.reconhecer(id, exige ? justif[id] : undefined)
+      await operacaoService.reconhecer(id, exige ? justif[id] : undefined, {
+        gerarParada: gerar[id],
+        motivoParadaId: motivo[id],
+      })
       await carregar()
     } catch (e) {
       setErro(mensagemErro(e, 'Não foi possível reconhecer.'))
@@ -58,6 +66,32 @@ export default function AlertasPage() {
             value={justif[a.id] ?? ''}
             onChange={(e) => setJustif((j) => ({ ...j, [a.id]: e.target.value }))}
           />
+        )}
+        {a.colaboradorId && (
+          <label className="mt-2 flex items-center gap-2 text-sm text-aco">
+            <input
+              type="checkbox"
+              checked={!!gerar[a.id]}
+              onChange={(e) => setGerar((g) => ({ ...g, [a.id]: e.target.checked }))}
+            />
+            Lançar a parada correspondente
+          </label>
+        )}
+        {gerar[a.id] && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {motivos.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setMotivo((x) => ({ ...x, [a.id]: m.id }))}
+                className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
+                  motivo[a.id] === m.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                }`}
+              >
+                {m.nome}
+              </button>
+            ))}
+          </div>
         )}
         <button
           type="button"

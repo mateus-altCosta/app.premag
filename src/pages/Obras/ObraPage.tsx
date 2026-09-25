@@ -4,24 +4,30 @@ import Sheet from '../../components/Sheet'
 import type { CatalogoDto, EquipeDto, FrenteDto, ObraDto } from '../../app/models/entity/Cadastro.dto'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import { loadSession } from '../../app/services/premag/session'
-import { podeGerir } from '../../app/services/premag/perfil'
+import { ehDiretoria, podeGerir } from '../../app/services/premag/perfil'
 import FotoSheet from '../../components/FotoSheet'
 import GradeFotos from '../../components/GradeFotos'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import type { FotoDto } from '../../app/models/entity/Operacao.dto'
 
 const UNIDADES = ['pç', 'm³', 'm', 'kg', 'h', 'un']
+const UNIDADES_ACO = ['kg', 'm²', 'm³']
 
 export default function ObraPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const gerir = podeGerir(loadSession()?.perfil)
+  const perfil = loadSession()?.perfil
+  const gerir = podeGerir(perfil)
+  const diretoria = ehDiretoria(perfil)
   const [obra, setObra] = useState<ObraDto | null>(null)
   const [frentes, setFrentes] = useState<FrenteDto[]>([])
   const [equipes, setEquipes] = useState<EquipeDto[]>([])
   const [catalogo, setCatalogo] = useState<CatalogoDto | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [abrir, setAbrir] = useState(false)
+  const [editarFrente, setEditarFrente] = useState<FrenteDto | null>(null)
+  const [editarObra, setEditarObra] = useState(false)
+  const [obraForm, setObraForm] = useState({ nome: '', cliente: '', tipo: '', local: '', status: 1 })
   const [foto, setFoto] = useState(false)
   const [fotos, setFotos] = useState<FotoDto[]>([])
   const [enviando, setEnviando] = useState(false)
@@ -32,6 +38,7 @@ export default function ObraPage() {
     unidade: 'pç',
     prevista: '',
     aco: '',
+    unidadeAco: 'kg',
     hhOrc: '',
   })
 
@@ -44,6 +51,13 @@ export default function ObraPage() {
       cadastroService.catalogos(),
     ])
     setObra(o)
+    setObraForm({
+      nome: o.nome,
+      cliente: o.cliente,
+      tipo: o.tipo,
+      local: o.local,
+      status: o.status,
+    })
     setFrentes(fs)
     setEquipes(eqs)
     setCatalogo(cat)
@@ -69,16 +83,79 @@ export default function ObraPage() {
         unidade: form.unidade,
         quantidadePrevista: Number(form.prevista.replace(',', '.')) || 0,
         taxaAcoKgPorUnidade: form.aco ? Number(form.aco.replace(',', '.')) : null,
+        taxaAcoUnidade: form.unidadeAco,
         hhOrcadoPorUnidade: form.hhOrc ? Number(form.hhOrc.replace(',', '.')) : null,
       })
       setAbrir(false)
-      setForm((f) => ({ ...f, nome: '', prevista: '', aco: '', hhOrc: '', equipeId: '' }))
+      setForm((f) => ({ ...f, nome: '', prevista: '', aco: '', unidadeAco: 'kg', hhOrc: '', equipeId: '' }))
       await carregar()
     } catch (err) {
       setErro(mensagemErro(err, 'Não foi possível cadastrar a frente.'))
     } finally {
       setEnviando(false)
     }
+  }
+
+  async function onSalvarFrente(e: FormEvent) {
+    e.preventDefault()
+    if (!id || !form.etapaId || !editarFrente) return
+    setEnviando(true)
+    setErro(null)
+    try {
+      await cadastroService.atualizarFrente(editarFrente.id, {
+        obraId: id,
+        nome: form.nome.trim(),
+        etapaId: form.etapaId,
+        equipeId: form.equipeId || null,
+        unidade: form.unidade,
+        quantidadePrevista: Number(form.prevista.replace(',', '.')) || 0,
+        taxaAcoKgPorUnidade: form.aco ? Number(form.aco.replace(',', '.')) : null,
+        taxaAcoUnidade: form.unidadeAco,
+        hhOrcadoPorUnidade: form.hhOrc ? Number(form.hhOrc.replace(',', '.')) : null,
+      })
+      setEditarFrente(null)
+      await carregar()
+    } catch (err) {
+      setErro(mensagemErro(err, 'Não foi possível alterar a frente.'))
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  async function onSalvarObra(e: FormEvent) {
+    e.preventDefault()
+    if (!id) return
+    setEnviando(true)
+    setErro(null)
+    try {
+      await cadastroService.atualizarObra(id, {
+        nome: obraForm.nome.trim(),
+        cliente: obraForm.cliente.trim(),
+        tipo: obraForm.tipo.trim(),
+        local: obraForm.local.trim(),
+        status: obraForm.status,
+      })
+      setEditarObra(false)
+      await carregar()
+    } catch (err) {
+      setErro(mensagemErro(err, 'Não foi possível alterar a obra.'))
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  function abrirEdicaoFrente(f: FrenteDto) {
+    setForm({
+      nome: f.nome,
+      etapaId: f.etapaId,
+      equipeId: f.equipeId ?? '',
+      unidade: f.unidade,
+      prevista: String(f.quantidadePrevista || ''),
+      aco: f.taxaAcoKgPorUnidade != null ? String(f.taxaAcoKgPorUnidade) : '',
+      unidadeAco: f.taxaAcoUnidade || 'kg',
+      hhOrc: f.hhOrcadoPorUnidade != null ? String(f.hhOrcadoPorUnidade) : '',
+    })
+    setEditarFrente(f)
   }
 
   return (
@@ -90,7 +167,18 @@ export default function ObraPage() {
       >
         ← Voltar para obras
       </button>
-      <p className="mb-3 font-disp text-xl leading-tight">{obra?.nome ?? 'Obra'}</p>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <p className="font-disp text-xl leading-tight">{obra?.nome ?? 'Obra'}</p>
+        {diretoria && !obra?.interna && (
+          <button
+            type="button"
+            className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-ambar"
+            onClick={() => setEditarObra(true)}
+          >
+            Alterar obra
+          </button>
+        )}
+      </div>
       {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
       <div className="space-y-2">
         {frentes.map((f) => (
@@ -124,11 +212,11 @@ export default function ObraPage() {
                 )}
                 {f.acoEstimadoKg ? (
                   <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
-                    aço est. {fmt(f.acoEstimadoKg)} kg
+                    aço est. {fmt(f.acoEstimadoKg)} {f.taxaAcoUnidade || 'kg'}
                   </span>
                 ) : f.taxaAcoKgPorUnidade ? (
                   <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
-                    {fmt(f.taxaAcoKgPorUnidade)} kg aço/{f.unidade}
+                    {fmt(f.taxaAcoKgPorUnidade)} {f.taxaAcoUnidade || 'kg'} aço/{f.unidade}
                   </span>
                 ) : null}
                 {f.custoPorUnidade != null && (
@@ -153,8 +241,22 @@ export default function ObraPage() {
                   {f.etapaNome}
                 </span>
               </div>
+              {gerir && (
+                <button
+                  type="button"
+                  className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+                  onClick={() => abrirEdicaoFrente(f)}
+                >
+                  Alterar frente
+                </button>
+              )}
               <div className="mt-2">
-                <GradeFotos fotos={fotos.filter((x) => x.frenteId === f.id).slice(0, 4)} colunas={4} />
+                <GradeFotos
+                  fotos={fotos.filter((x) => x.frenteId === f.id).slice(0, 4)}
+                  colunas={4}
+                  podeExcluir={gerir}
+                  onExcluida={() => carregar().catch(() => undefined)}
+                />
               </div>
             </div>
           </div>
@@ -163,7 +265,10 @@ export default function ObraPage() {
       {gerir && (
         <button
           type="button"
-          onClick={() => setAbrir(true)}
+          onClick={() => {
+            setForm((f) => ({ ...f, nome: '', prevista: '', aco: '', unidadeAco: 'kg', hhOrc: '', equipeId: '' }))
+            setAbrir(true)
+          }}
           className="mt-3 w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
         >
           + Cadastrar frente
@@ -182,6 +287,122 @@ export default function ObraPage() {
         >
           REGISTRAR FOTO
         </button>
+      )}
+
+      {editarObra && (
+        <Sheet titulo="Alterar obra" onClose={() => setEditarObra(false)}>
+          <form onSubmit={onSalvarObra} className="space-y-3">
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={obraForm.nome}
+                onChange={(e) => setObraForm({ ...obraForm, nome: e.target.value })}
+                required
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Cliente</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={obraForm.cliente}
+                onChange={(e) => setObraForm({ ...obraForm, cliente: e.target.value })}
+                required
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Tipo</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={obraForm.tipo}
+                onChange={(e) => setObraForm({ ...obraForm, tipo: e.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Local</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={obraForm.local}
+                onChange={(e) => setObraForm({ ...obraForm, local: e.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Situação</span>
+              <select
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={obraForm.status}
+                onChange={(e) => setObraForm({ ...obraForm, status: Number(e.target.value) })}
+              >
+                <option value={0}>Planejada</option>
+                <option value={1}>Em execução</option>
+                <option value={2}>Concluída</option>
+                <option value={3}>Suspensa</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={enviando}
+              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+            >
+              {enviando ? 'Salvando…' : 'Salvar obra'}
+            </button>
+          </form>
+        </Sheet>
+      )}
+
+      {editarFrente && catalogo && (
+        <Sheet titulo="Alterar frente" onClose={() => setEditarFrente(null)}>
+          <form onSubmit={onSalvarFrente} className="space-y-3">
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                required
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Quantidade prevista</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={form.prevista}
+                onChange={(e) => setForm({ ...form, prevista: e.target.value })}
+                inputMode="decimal"
+              />
+            </label>
+            <CampoAco
+              unidadeAco={form.unidadeAco}
+              valor={form.aco}
+              onUnidade={(u) => setForm({ ...form, unidadeAco: u })}
+              onValor={(v) => setForm({ ...form, aco: v })}
+            />
+            <div>
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Equipe</p>
+              <div className="flex flex-wrap gap-2">
+                {equipes.map((eq) => (
+                  <button
+                    key={eq.id}
+                    type="button"
+                    onClick={() => setForm({ ...form, equipeId: form.equipeId === eq.id ? '' : eq.id })}
+                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
+                      form.equipeId === eq.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                    }`}
+                  >
+                    {eq.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={enviando}
+              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+            >
+              {enviando ? 'Salvando…' : 'Salvar frente'}
+            </button>
+          </form>
+        </Sheet>
       )}
 
       {abrir && catalogo && (
@@ -248,17 +469,12 @@ export default function ObraPage() {
                 inputMode="decimal"
               />
             </label>
-            <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">
-                kg de aço por unidade
-              </span>
-              <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
-                value={form.aco}
-                onChange={(e) => setForm({ ...form, aco: e.target.value })}
-                inputMode="decimal"
-              />
-            </label>
+            <CampoAco
+              unidadeAco={form.unidadeAco}
+              valor={form.aco}
+              onUnidade={(u) => setForm({ ...form, unidadeAco: u })}
+              onValor={(v) => setForm({ ...form, aco: v })}
+            />
             <div>
               <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Equipe</p>
               <div className="flex flex-wrap gap-2">
@@ -299,6 +515,53 @@ export default function ObraPage() {
         />
       )}
     </div>
+  )
+}
+
+function CampoAco({
+  unidadeAco,
+  valor,
+  onUnidade,
+  onValor,
+}: {
+  unidadeAco: string
+  valor: string
+  onUnidade: (u: string) => void
+  onValor: (v: string) => void
+}) {
+  return (
+    <>
+      <div>
+        <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">
+          Unidade de aço por unidade
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {UNIDADES_ACO.map((u) => (
+            <button
+              key={u}
+              type="button"
+              onClick={() => onUnidade(u)}
+              className={`rounded border px-3 py-1.5 font-mono text-[11px] ${
+                unidadeAco === u ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+              }`}
+            >
+              {u}
+            </button>
+          ))}
+        </div>
+      </div>
+      <label className="block">
+        <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">
+          {unidadeAco} de aço por unidade
+        </span>
+        <input
+          className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+          value={valor}
+          onChange={(e) => onValor(e.target.value)}
+          inputMode="decimal"
+        />
+      </label>
+    </>
   )
 }
 

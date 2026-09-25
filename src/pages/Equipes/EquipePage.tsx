@@ -22,7 +22,7 @@ export default function EquipePage() {
   const [turno, setTurno] = useState<TurnoDto | null>(null)
   const [equipes, setEquipes] = useState<EquipeDto[]>([])
   const [erro, setErro] = useState<string | null>(null)
-  const [folha, setFolha] = useState<'novo' | 'mover' | null>(null)
+  const [folha, setFolha] = useState<'novo' | 'mover' | 'editar' | null>(null)
   const [alvo, setAlvo] = useState<TurnoColaboradorDto | null>(null)
   const [mat, setMat] = useState('')
   const [nome, setNome] = useState('')
@@ -85,6 +85,26 @@ export default function EquipePage() {
       await carregar()
     } catch (err) {
       setErro(mensagemErro(err, 'Não foi possível transferir.'))
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  async function onEditar(e: FormEvent) {
+    e.preventDefault()
+    if (!alvo) return
+    setEnviando(true)
+    setErro(null)
+    try {
+      await cadastroService.atualizarColaborador(alvo.id, {
+        nome: nome.trim(),
+        funcao: funcao.trim() || '—',
+      })
+      setFolha(null)
+      setAlvo(null)
+      await carregar()
+    } catch (err) {
+      setErro(mensagemErro(err, 'Não foi possível alterar o funcionário.'))
     } finally {
       setEnviando(false)
     }
@@ -184,8 +204,20 @@ export default function EquipePage() {
                 </span>
                 <span>{horas(c.minutosTrabalhados)}h apontadas</span>
               </div>
-              {gerir && presente && (
+              {gerir && (
                 <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="border border-[#CFCCC5] px-2 py-1 font-mono text-[10px] uppercase"
+                    onClick={() => {
+                      setAlvo(c)
+                      setNome(c.nome)
+                      setFuncao(c.funcao)
+                      setFolha('editar')
+                    }}
+                  >
+                    Nome e função
+                  </button>
                   <button
                     type="button"
                     className="border border-[#CFCCC5] px-2 py-1 font-mono text-[10px] uppercase"
@@ -236,6 +268,22 @@ export default function EquipePage() {
               className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
             >
               {enviando ? 'Salvando…' : 'Cadastrar'}
+            </button>
+          </form>
+        </Sheet>
+      )}
+
+      {folha === 'editar' && alvo && (
+        <Sheet titulo={`Nome e função — ${alvo.nome}`} onClose={() => setFolha(null)}>
+          <form onSubmit={onEditar} className="space-y-3">
+            <Campo label="Nome" value={nome} onChange={setNome} required />
+            <Campo label="Função" value={funcao} onChange={setFuncao} />
+            <button
+              type="submit"
+              disabled={enviando}
+              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+            >
+              {enviando ? 'Salvando…' : 'Salvar'}
             </button>
           </form>
         </Sheet>

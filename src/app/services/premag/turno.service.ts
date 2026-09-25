@@ -15,6 +15,17 @@ export function mensagemErro(err: unknown, fallback: string): string {
   return fallback
 }
 
+export async function ajustarApontamento(
+  id: string,
+  dto: { horaInicio: string; horaFim?: string | null; frenteId: string },
+) {
+  return api.put<ApontamentoDto>(`/apontamentos/${id}`, dto).then((r) => r.data)
+}
+
+export async function anularApontamento(id: string, justificativa: string) {
+  return api.delete(`/apontamentos/${id}`, { data: { justificativa } })
+}
+
 export function codigoErro(err: unknown): string | undefined {
   if (!isAxiosError(err)) return undefined
   return (err.response?.data as { codigo?: string } | undefined)?.codigo

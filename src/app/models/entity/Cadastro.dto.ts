@@ -47,6 +47,7 @@ export interface FrenteDto {
   quantidadeConcluida: number
   percentualAvanco: number
   taxaAcoKgPorUnidade?: number | null
+  taxaAcoUnidade?: string | null
   hhOrcadoPorUnidade?: number | null
   cor: string
   ativa: boolean
@@ -112,6 +113,7 @@ export interface CriarFrenteDto {
   unidade: string
   quantidadePrevista: number
   taxaAcoKgPorUnidade?: number | null
+  taxaAcoUnidade?: string | null
   hhOrcadoPorUnidade?: number | null
   itemOrcamentoSienge?: string
   cor?: string

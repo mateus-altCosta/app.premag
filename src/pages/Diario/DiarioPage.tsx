@@ -4,7 +4,7 @@ import type { DiarioDto } from '../../app/models/entity/Operacao.dto'
 import { mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import { loadSession } from '../../app/services/premag/session'
-import { ehEncarregado } from '../../app/services/premag/perfil'
+import { ehEncarregado, podeGerir } from '../../app/services/premag/perfil'
 import GradeFotos from '../../components/GradeFotos'
 
 function fmtData(iso: string) {
@@ -18,6 +18,7 @@ export default function DiarioPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [baixando, setBaixando] = useState(false)
   const equipeId = ehEncarregado(session?.perfil) ? session?.equipeId ?? undefined : undefined
+  const gerir = podeGerir(session?.perfil)
 
   useEffect(() => {
     operacaoService
@@ -108,7 +109,13 @@ export default function DiarioPage() {
           </p>
         ) : (
           <>
-            <GradeFotos fotos={diario?.fotos ?? []} />
+            <GradeFotos
+              fotos={diario?.fotos ?? []}
+              podeExcluir={gerir}
+              onExcluida={() =>
+                operacaoService.diario({ equipeId }).then(setDiario).catch(() => undefined)
+              }
+            />
             {diario && diario.fotos.length > 0 && (
               <p className="mt-2 text-xs text-aco">
                 {diario.fotosAvanco} de {diario.fotos.length} registros marcados como avanço, com quantidade vinculada à

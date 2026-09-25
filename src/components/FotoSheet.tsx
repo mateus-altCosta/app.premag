@@ -9,6 +9,17 @@ import { isFalhaDeRede } from '../app/services/premag/rede'
 import { enfileirar } from '../app/services/premag/sync.service'
 import { clienteUuid } from '../app/services/premag/jornada'
 
+function obterGps(): Promise<{ lat?: number; lng?: number }> {
+  if (!navigator.geolocation) return Promise.resolve({})
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => resolve({}),
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60_000 },
+    )
+  })
+}
+
 const TIPOS: { id: TipoFoto; label: string }[] = [
   { id: 'Avanco', label: 'Avanço' },
   { id: 'Ocorrencia', label: 'Ocorrência' },
@@ -62,6 +73,7 @@ export default function FotoSheet({
     if (!blob || !frenteId) return
     setEnviando(true)
     setErro(null)
+    const gps = await obterGps()
     try {
       await operacaoService.enviarFoto({
         jpeg: blob,
@@ -71,6 +83,8 @@ export default function FotoSheet({
         apontamentoId,
         quantidade: tipo === 'Avanco' ? qtd : undefined,
         observacao: obs,
+        latitude: gps.lat,
+        longitude: gps.lng,
       })
       onOk()
     } catch (err) {
@@ -86,6 +100,8 @@ export default function FotoSheet({
             quantidade: tipo === 'Avanco' ? qtd : undefined,
             observacao: obs,
             clienteUuid: clienteUuid(),
+            latitude: gps.lat,
+            longitude: gps.lng,
           },
         })
         onOk()
@@ -188,7 +204,8 @@ export default function FotoSheet({
                   placeholder="0"
                 />
                 <p className="mt-2 text-xs text-aco">
-                  A foto é a evidência do avanço, não a medida dele. A quantidade continua sendo da <b>frente</b>.
+                  A foto é a evidência do avanço. Se a quantidade já foi informada ao encerrar o serviço, ela{' '}
+                  <b>não soma de novo</b>.
                 </p>
               </label>
             )}

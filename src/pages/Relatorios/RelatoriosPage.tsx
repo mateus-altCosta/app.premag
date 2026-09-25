@@ -54,6 +54,8 @@ export default function RelatoriosPage() {
 
   const n0 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
   const n2 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+  const bloqueiaCsv =
+    tipo === 'produtividade' && (rel?.linhas ?? []).some((l) => l.amostraInsuficiente && l.quantidade > 0)
 
   return (
     <div>
@@ -108,7 +110,10 @@ export default function RelatoriosPage() {
                   <td>
                     {n0(l.quantidade)} {l.unidade}
                   </td>
-                  <td>{l.hhPorUnidade != null ? n2(l.hhPorUnidade) : '—'}</td>
+                  <td>
+                    {l.hhPorUnidade != null ? n2(l.hhPorUnidade) : '—'}
+                    {l.amostraInsuficiente && l.quantidade > 0 ? ' *' : ''}
+                  </td>
                   <td className={l.desvioPercentual && l.desvioPercentual > 0 ? 'text-red-800' : 'text-green-800'}>
                     {l.desvioPercentual != null
                       ? `${l.desvioPercentual > 0 ? '▲' : '▼'} ${n0(Math.abs(l.desvioPercentual))}%`
@@ -136,7 +141,11 @@ export default function RelatoriosPage() {
                   <td>{n0(l.quantidadePrevista)}</td>
                   <td>{n0(l.quantidadeConcluida)}</td>
                   <td>{n0(l.percentualAvanco)}%</td>
-                  <td>{l.acoEstimadoKg ? `${n0(l.acoEstimadoKg / 1000)} t` : '—'}</td>
+                  <td>
+                    {l.acoEstimadoKg
+                      ? `${n0(l.acoEstimadoKg)} ${l.taxaAcoUnidade || 'kg'}`
+                      : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -144,10 +153,15 @@ export default function RelatoriosPage() {
         )}
       </div>
       <p className="mt-3 text-xs text-aco">{rel?.nota}</p>
+      {bloqueiaCsv && (
+        <p className="mt-2 text-xs text-red-800">
+          Índice com menos de 5 lançamentos não vai para o CSV (risco de cotação). Use o relatório de avanço ou espere mais amostra.
+        </p>
+      )}
       <button
         type="button"
         onClick={csv}
-        disabled={baixando}
+        disabled={baixando || bloqueiaCsv}
         className="mt-3 h-12 w-full rounded bg-grafite font-mono text-[11px] uppercase tracking-wider text-papel disabled:opacity-50"
       >
         {baixando ? 'Gerando…' : 'Exportar CSV'}

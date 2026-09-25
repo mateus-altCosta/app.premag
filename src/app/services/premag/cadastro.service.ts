@@ -38,13 +38,19 @@ export const cadastroService = {
     ),
   criarColaborador: (dto: CriarColaboradorDto) =>
     api.post<ColaboradorDto>('/colaboradores', dto).then((r) => r.data),
+  atualizarColaborador: (id: string, dto: { nome: string; funcao: string }) =>
+    api.put<ColaboradorDto>(`/colaboradores/${id}`, dto).then((r) => r.data),
   transferir: (id: string, equipeId: string) =>
     api.put<ColaboradorDto>(`/colaboradores/${id}/equipe`, { equipeId }).then((r) => r.data),
   excluirColaborador: (id: string) => api.delete(`/colaboradores/${id}`),
   obras: () => comCache('obras', () => api.get<ObraDto[]>('/obras').then((r) => r.data)),
   obra: (id: string) => comCache(`obra:${id}`, () => api.get<ObraDto>(`/obras/${id}`).then((r) => r.data)),
   criarObra: (dto: CriarObraDto) => api.post<ObraDto>('/obras', dto).then((r) => r.data),
+  atualizarObra: (id: string, dto: CriarObraDto & { status: number }) =>
+    api.put<ObraDto>(`/obras/${id}`, dto).then((r) => r.data),
   frentesDaObra: (obraId: string) =>
     comCache(`frentes:${obraId}`, () => api.get<FrenteDto[]>(`/obras/${obraId}/frentes`).then((r) => r.data)),
   criarFrente: (dto: CriarFrenteDto) => api.post<FrenteDto>('/frentes', dto).then((r) => r.data),
+  atualizarFrente: (id: string, dto: CriarFrenteDto) =>
+    api.put<FrenteDto>(`/frentes/${id}`, dto).then((r) => r.data),
 }

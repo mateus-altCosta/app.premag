@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Sheet from '../../components/Sheet'
 import Regua from '../../components/Regua'
 import type { TurnoColaboradorDto, TurnoDto } from '../../app/models/entity/Turno.dto'
-import { mensagemErro } from '../../app/services/premag/cadastro.service'
-import { turnoService } from '../../app/services/premag/turno.service'
+import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
+import { turnoService, ajustarApontamento, anularApontamento } from '../../app/services/premag/turno.service'
+import { loadSession } from '../../app/services/premag/session'
+import { podeGerir } from '../../app/services/premag/perfil'
 import {
   agoraNaJornada,
   clienteUuid,
@@ -20,7 +22,7 @@ import GradeFotos from '../../components/GradeFotos'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import type { FotoDto } from '../../app/models/entity/Operacao.dto'
 
-type Folha = 'iniciar' | 'encerrar' | 'foto' | null
+type Folha = 'iniciar' | 'encerrar' | 'foto' | 'ajustar' | 'editar' | null
 
 export default function ColaboradorPage() {
   const { id, colabId } = useParams<{ id: string; colabId: string }>()
@@ -38,6 +40,10 @@ export default function ColaboradorPage() {
   const [qtd, setQtd] = useState('')
   const [obs, setObs] = useState('')
   const [fotos, setFotos] = useState<FotoDto[]>([])
+  const [ajusteId, setAjusteId] = useState<string | null>(null)
+  const [nomeEd, setNomeEd] = useState('')
+  const [funcaoEd, setFuncaoEd] = useState('')
+  const gerir = podeGerir(loadSession()?.perfil)
 
   async function carregar() {
     if (!id) return
@@ -185,6 +191,19 @@ export default function ColaboradorPage() {
           <span className="font-disp text-[18px]">{colab.nome}</span>
           <span className="font-mono text-[11px] text-aco">{colab.matricula}</span>
         </div>
+        {gerir && (
+          <button
+            type="button"
+            className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+            onClick={() => {
+              setNomeEd(colab.nome)
+              setFuncaoEd(colab.funcao)
+              setFolha('editar')
+            }}
+          >
+            Nome e função
+          </button>
+        )}
         <div className="mt-2 flex flex-wrap gap-1.5">
           <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">{colab.funcao}</span>
           {colab.custoHora != null && (
@@ -290,6 +309,40 @@ export default function ColaboradorPage() {
                 {a.motivoParadaNome && (
                   <p className="mt-1 font-mono text-[10px] uppercase text-red-800">{a.motivoParadaNome}</p>
                 )}
+                {gerir && !a.pendente && (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      className="font-mono text-[10px] uppercase text-ambar"
+                      onClick={() => {
+                        setAjusteId(a.id)
+                        setHoraIni(paraMinutos(a.horaInicio))
+                        setHoraFim(a.horaFim ? paraMinutos(a.horaFim) : agora)
+                        setFrenteId(a.frenteId)
+                        setObraId(a.obraId)
+                        setFolha('ajustar')
+                      }}
+                    >
+                      Corrigir
+                    </button>
+                    <button
+                      type="button"
+                      className="font-mono text-[10px] uppercase text-red-800"
+                      onClick={async () => {
+                        const motivo = window.prompt('Motivo da anulação')
+                        if (!motivo || motivo.trim().length < 3) return
+                        try {
+                          await anularApontamento(a.id, motivo.trim())
+                          await carregar()
+                        } catch (err) {
+                          setErro(mensagemErro(err, 'Não foi possível anular.'))
+                        }
+                      }}
+                    >
+                      Anular
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -299,7 +352,11 @@ export default function ColaboradorPage() {
       {fotos.length > 0 && (
         <div className="mt-5">
           <h3 className="mb-2 font-disp text-lg">Registro fotográfico</h3>
-          <GradeFotos fotos={fotos} />
+          <GradeFotos
+            fotos={fotos}
+            podeExcluir={gerir}
+            onExcluida={() => carregar().catch(() => undefined)}
+          />
         </div>
       )}
 
@@ -493,6 +550,132 @@ export default function ColaboradorPage() {
               className="h-12 w-full rounded border border-[#CFCCC5] font-mono text-[11px] uppercase"
             >
               Encerrar e iniciar novo serviço
+            </button>
+          </form>
+        </Sheet>
+      )}
+
+      {folha === 'ajustar' && turno && ajusteId && (
+        <Sheet titulo="Corrigir apontamento" onClose={() => setFolha(null)}>
+          <form
+            className="space-y-4"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              if (!frenteId) return
+              setEnviando(true)
+              setErro(null)
+              try {
+                const apt = colab.apontamentos.find((x) => x.id === ajusteId)
+                await ajustarApontamento(ajusteId, {
+                  horaInicio: formatarHora(horaIni),
+                  horaFim: apt?.horaFim ? formatarHora(horaFim) : undefined,
+                  frenteId,
+                })
+                setFolha(null)
+                await carregar()
+              } catch (err) {
+                setErro(mensagemErro(err, 'Não foi possível corrigir.'))
+              } finally {
+                setEnviando(false)
+              }
+            }}
+          >
+            <div>
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">Frente</p>
+              <div className="space-y-1">
+                {turno.frentes.filter((f) => !obraId || f.obraId === obraId).map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setFrenteId(f.id)}
+                    className={`flex w-full items-center gap-2 rounded border px-3 py-2 text-left ${
+                      frenteId === f.id ? 'border-ambar' : 'border-[#CFCCC5]'
+                    }`}
+                  >
+                    <span className="h-8 w-1 shrink-0 rounded" style={{ background: f.cor }} />
+                    <span className="font-disp">{f.nome}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">Início</p>
+              <div className="flex items-center gap-3">
+                <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraIni((h) => h - 5)}>
+                  −
+                </button>
+                <div className="flex-1 text-center font-disp text-3xl">{formatarHora(horaIni)}</div>
+                <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraIni((h) => h + 5)}>
+                  +
+                </button>
+              </div>
+            </div>
+            {colab.apontamentos.find((x) => x.id === ajusteId)?.horaFim && (
+              <div>
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">Término</p>
+                <div className="flex items-center gap-3">
+                  <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraFim((h) => h - 5)}>
+                    −
+                  </button>
+                  <div className="flex-1 text-center font-disp text-3xl">{formatarHora(horaFim)}</div>
+                  <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraFim((h) => h + 5)}>
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+            <button type="submit" disabled={enviando} className="h-14 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-40">
+              {enviando ? 'Salvando…' : 'SALVAR'}
+            </button>
+          </form>
+        </Sheet>
+      )}
+
+      {folha === 'editar' && colab && (
+        <Sheet titulo={`Nome e função — ${colab.nome}`} onClose={() => setFolha(null)}>
+          <form
+            className="space-y-3"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              setEnviando(true)
+              setErro(null)
+              try {
+                await cadastroService.atualizarColaborador(colab.id, {
+                  nome: nomeEd.trim(),
+                  funcao: funcaoEd.trim() || '—',
+                })
+                setFolha(null)
+                await carregar()
+              } catch (err) {
+                setErro(mensagemErro(err, 'Não foi possível alterar o funcionário.'))
+              } finally {
+                setEnviando(false)
+              }
+            }}
+          >
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={nomeEd}
+                onChange={(e) => setNomeEd(e.target.value)}
+                required
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Função</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={funcaoEd}
+                onChange={(e) => setFuncaoEd(e.target.value)}
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={enviando}
+              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+            >
+              {enviando ? 'Salvando…' : 'Salvar'}
             </button>
           </form>
         </Sheet>

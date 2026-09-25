@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState, type PointerEvent, type TouchEvent, type TouchList, type WheelEvent } from 'react'
-import { urlFotoAutenticada } from '../app/services/premag/operacao.service'
+import { operacaoService, urlFotoAutenticada } from '../app/services/premag/operacao.service'
 import type { FotoDto } from '../app/models/entity/Operacao.dto'
 
-export default function GradeFotos({ fotos, colunas = 3 }: { fotos: FotoDto[]; colunas?: number }) {
+export default function GradeFotos({
+  fotos,
+  colunas = 3,
+  podeExcluir = false,
+  onExcluida,
+}: {
+  fotos: FotoDto[]
+  colunas?: number
+  podeExcluir?: boolean
+  onExcluida?: () => void
+}) {
   const [aberta, setAberta] = useState<FotoDto | null>(null)
   if (fotos.length === 0) return null
   return (
@@ -12,7 +22,18 @@ export default function GradeFotos({ fotos, colunas = 3 }: { fotos: FotoDto[]; c
           <Thumb key={f.id} foto={f} onAbrir={() => setAberta(f)} />
         ))}
       </div>
-      {aberta && <VisorFoto foto={aberta} onClose={() => setAberta(null)} />}
+      {aberta && (
+        <VisorFoto
+          foto={aberta}
+          podeExcluir={podeExcluir}
+          onClose={() => setAberta(null)}
+          onExcluir={async () => {
+            await operacaoService.excluirFoto(aberta.id)
+            setAberta(null)
+            onExcluida?.()
+          }}
+        />
+      )}
     </>
   )
 }
@@ -65,7 +86,17 @@ function Thumb({ foto, onAbrir }: { foto: FotoDto; onAbrir: () => void }) {
   )
 }
 
-function VisorFoto({ foto, onClose }: { foto: FotoDto; onClose: () => void }) {
+function VisorFoto({
+  foto,
+  onClose,
+  podeExcluir,
+  onExcluir,
+}: {
+  foto: FotoDto
+  onClose: () => void
+  podeExcluir?: boolean
+  onExcluir?: () => Promise<void>
+}) {
   const [src, setSrc] = useState<string | null>(null)
   const [escala, setEscala] = useState(1)
   const [ox, setOx] = useState(0)
@@ -151,14 +182,31 @@ function VisorFoto({ foto, onClose }: { foto: FotoDto; onClose: () => void }) {
           {horaFoto(foto)} · {rotuloTipo(foto)}
           {foto.frenteNome ? ` · ${foto.frenteNome}` : ''}
           {foto.quantidade ? ` · ${foto.quantidade}` : ''}
+          {foto.latitude != null && foto.longitude != null
+            ? ` · ${foto.latitude.toFixed(4)}, ${foto.longitude.toFixed(4)}`
+            : ''}
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="shrink-0 border border-[#3d4348] px-3 py-2 font-mono text-[10px] uppercase tracking-wider"
-        >
-          Fechar
-        </button>
+        <div className="flex shrink-0 gap-2">
+          {podeExcluir && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!confirm('Retirar esta foto do diário?')) return
+                void onExcluir?.()
+              }}
+              className="border border-red-800/60 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-red-200"
+            >
+              Retirar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="border border-[#3d4348] px-3 py-2 font-mono text-[10px] uppercase tracking-wider"
+          >
+            Fechar
+          </button>
+        </div>
       </div>
       <div
         className="relative min-h-0 flex-1 touch-none overflow-hidden"

@@ -84,6 +84,8 @@ export interface ItemFila {
     quantidade?: string
     observacao?: string
     clienteUuid: string
+    latitude?: number
+    longitude?: number
   }
 }
 

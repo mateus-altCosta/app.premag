@@ -11,6 +11,11 @@ function rotuloAcao(acao: string) {
   if (acao === 'fechar-auto') return 'Dia fechado no fim da jornada'
   if (acao === 'reabrir-dia') return 'Reabriu o dia'
   if (acao === 'alterar-senha') return 'Trocou a senha'
+  if (acao === 'editar-colab') return 'Corrigiu colaborador'
+  if (acao === 'ajustar-apt') return 'Corrigiu apontamento'
+  if (acao === 'anular-apt') return 'Anulou apontamento'
+  if (acao === 'excluir-foto') return 'Retirou foto do diário'
+  if (acao === 'gerar-parada') return 'Lançou parada do alerta'
   return acao
 }
 

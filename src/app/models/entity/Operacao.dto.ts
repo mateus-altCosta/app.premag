@@ -11,6 +11,8 @@ export interface FotoDto {
   quantidade?: number | null
   observacao?: string | null
   capturadaEm: string
+  latitude?: number | null
+  longitude?: number | null
   url: string
   urlThumb: string
 }
@@ -67,7 +69,9 @@ export interface RelatorioLinhaDto {
   quantidadeConcluida: number
   percentualAvanco: number
   acoEstimadoKg?: number | null
+  taxaAcoUnidade?: string | null
   custoPorUnidade?: number | null
+  amostraInsuficiente?: boolean
 }
 
 export interface RelatorioDto {

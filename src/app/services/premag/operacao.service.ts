@@ -47,6 +47,8 @@ export const operacaoService = {
     quantidade?: string
     observacao?: string
     clienteUuid?: string
+    latitude?: number
+    longitude?: number
   }) => {
     const fd = new FormData()
     fd.append('clienteUuid', opts.clienteUuid || clienteUuid())
@@ -56,9 +58,13 @@ export const operacaoService = {
     if (opts.apontamentoId) fd.append('apontamentoId', opts.apontamentoId)
     if (opts.quantidade) fd.append('quantidade', opts.quantidade.replace(',', '.'))
     if (opts.observacao) fd.append('observacao', opts.observacao)
+    if (opts.latitude != null) fd.append('latitude', String(opts.latitude))
+    if (opts.longitude != null) fd.append('longitude', String(opts.longitude))
     fd.append('arquivo', opts.jpeg, 'foto.jpg')
     return api.post<FotoDto>('/fotos', fd, multipart).then((r) => r.data)
   },
+
+  excluirFoto: (id: string) => api.delete(`/fotos/${id}`),
 
   diario: (params?: { data?: string; equipeId?: string }) =>
     api.get<DiarioDto>('/diario', { params }).then((r) => r.data),
@@ -74,8 +80,12 @@ export const operacaoService = {
   ocorrencias: (pendentes = true) =>
     api.get<OcorrenciaDto[]>('/ocorrencias', { params: { pendentes } }).then((r) => r.data),
 
-  reconhecer: (id: string, justificativa?: string) =>
-    api.post(`/ocorrencias/${id}/reconhecer`, { justificativa: justificativa || null }),
+  reconhecer: (id: string, justificativa?: string, opts?: { gerarParada?: boolean; motivoParadaId?: string }) =>
+    api.post(`/ocorrencias/${id}/reconhecer`, {
+      justificativa: justificativa || null,
+      gerarParada: !!opts?.gerarParada,
+      motivoParadaId: opts?.motivoParadaId || null,
+    }),
 
   relatorio: (tipo: string, periodo: string, obraId?: string) =>
     api

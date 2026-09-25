@@ -81,6 +81,8 @@ export async function sincronizarFila(): Promise<LoteResultado | null> {
           quantidade: f.foto.quantidade,
           observacao: f.foto.observacao,
           clienteUuid: f.foto.clienteUuid,
+          latitude: f.foto.latitude,
+          longitude: f.foto.longitude,
         })
         await filaStore.remover(f.id)
       } catch (err) {
