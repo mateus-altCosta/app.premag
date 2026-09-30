@@ -10,8 +10,8 @@ import GradeFotos from '../../components/GradeFotos'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import type { FotoDto } from '../../app/models/entity/Operacao.dto'
 
-const UNIDADES = ['pç', 'm³', 'm', 'kg', 'h', 'un']
-const UNIDADES_ACO = ['kg', 'm²', 'm³']
+const UNIDADES = ['pç', 'm³', 'm', 'kg', 'm²']
+const UNIDADES_ACO = ['kg', 'm²', 'm³', 'm']
 
 export default function ObraPage() {
   const { id } = useParams<{ id: string }>()
@@ -533,7 +533,7 @@ function CampoAco({
     <>
       <div>
         <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">
-          Unidade de aço por unidade
+          Unidade por unidade
         </p>
         <div className="flex flex-wrap gap-2">
           {UNIDADES_ACO.map((u) => (
@@ -552,7 +552,7 @@ function CampoAco({
       </div>
       <label className="block">
         <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">
-          {unidadeAco} de aço por unidade
+          {unidadeAco}
         </span>
         <input
           className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
