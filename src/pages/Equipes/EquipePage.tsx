@@ -11,6 +11,15 @@ import { loadSession } from '../../app/services/premag/session'
 import { podeGerir } from '../../app/services/premag/perfil'
 import { estaOnline, onRede } from '../../app/services/premag/rede'
 
+const CORES_EQUIPE = ['#F2A900', '#4A5560', '#2E7D5B', '#7B4B94', '#C1272D', '#2D6A9F']
+
+function parseCusto(texto: string): number | undefined {
+  const t = texto.trim().replace(/\s/g, '').replace(',', '.')
+  if (!t) return undefined
+  const n = Number(t)
+  return Number.isFinite(n) && n > 0 ? n : undefined
+}
+
 function estaPresente(c: TurnoColaboradorDto) {
   return c.ativo && (c.situacao === 'Presente' || c.situacao === 0)
 }
@@ -22,11 +31,14 @@ export default function EquipePage() {
   const [turno, setTurno] = useState<TurnoDto | null>(null)
   const [equipes, setEquipes] = useState<EquipeDto[]>([])
   const [erro, setErro] = useState<string | null>(null)
-  const [folha, setFolha] = useState<'novo' | 'mover' | 'editar' | null>(null)
+  const [folha, setFolha] = useState<'novo' | 'mover' | 'editar' | 'equipe' | null>(null)
   const [alvo, setAlvo] = useState<TurnoColaboradorDto | null>(null)
   const [mat, setMat] = useState('')
   const [nome, setNome] = useState('')
   const [funcao, setFuncao] = useState('')
+  const [custo, setCusto] = useState('')
+  const [eqNome, setEqNome] = useState('')
+  const [eqCor, setEqCor] = useState(CORES_EQUIPE[1])
   const [destino, setDestino] = useState('')
   const [enviando, setEnviando] = useState(false)
 
@@ -44,7 +56,7 @@ export default function EquipePage() {
     })
   }, [id])
 
-  const lista = turno?.colaboradores ?? []
+  const lista = (turno?.colaboradores ?? []).filter((c) => c.ativo)
   const presentes = lista.filter(estaPresente)
   const semServico = presentes.filter((c) => !c.aberto).length
   const hhTotal = presentes.reduce((t, c) => t + c.minutosTrabalhados, 0)
@@ -60,11 +72,13 @@ export default function EquipePage() {
         nome: nome.trim(),
         funcao: funcao.trim() || '—',
         equipeId: id,
+        custoHora: parseCusto(custo) ?? null,
       })
       setFolha(null)
       setMat('')
       setNome('')
       setFuncao('')
+      setCusto('')
       await carregar()
     } catch (err) {
       setErro(mensagemErro(err, 'Não foi possível cadastrar.'))
@@ -99,6 +113,7 @@ export default function EquipePage() {
       await cadastroService.atualizarColaborador(alvo.id, {
         nome: nome.trim(),
         funcao: funcao.trim() || '—',
+        custoHora: parseCusto(custo) ?? null,
       })
       setFolha(null)
       setAlvo(null)
@@ -134,6 +149,20 @@ export default function EquipePage() {
       <div className="mb-3 rounded border border-[#CFCCC5] bg-papel p-4">
         <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Situação agora</p>
         <p className="mt-1 font-disp text-xl">{turno?.equipeNome ?? 'Equipe'}</p>
+        {gerir && (
+          <button
+            type="button"
+            className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+            onClick={() => {
+              const atual = equipes.find((e) => e.id === id)
+              setEqNome(atual?.nome ?? turno?.equipeNome ?? '')
+              setEqCor(atual?.cor ?? CORES_EQUIPE[1])
+              setFolha('equipe')
+            }}
+          >
+            Alterar equipe
+          </button>
+        )}
         <div className="mt-3 grid grid-cols-3 gap-3">
           <div>
             <div className="font-disp text-3xl">{presentes.length}</div>
@@ -213,6 +242,7 @@ export default function EquipePage() {
                       setAlvo(c)
                       setNome(c.nome)
                       setFuncao(c.funcao)
+                      setCusto(c.custoHora != null ? String(c.custoHora).replace('.', ',') : '')
                       setFolha('editar')
                     }}
                   >
@@ -246,7 +276,10 @@ export default function EquipePage() {
       {gerir && (
         <button
           type="button"
-          onClick={() => setFolha('novo')}
+          onClick={() => {
+            setCusto('')
+            setFolha('novo')
+          }}
           className="mt-3 w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
         >
           + Cadastrar funcionário
@@ -259,8 +292,10 @@ export default function EquipePage() {
             <Campo label="Matrícula" value={mat} onChange={setMat} required />
             <Campo label="Nome" value={nome} onChange={setNome} required />
             <Campo label="Função" value={funcao} onChange={setFuncao} />
+            <Campo label="Valor da hora (R$)" value={custo} onChange={setCusto} />
             <p className="text-xs text-aco">
-              Cadastro avulso: entra no diário, fora do relatório de custo até a folha sincronizar.
+              Sem valor da hora, o funcionário entra no diário e fica fora do relatório de custo. Informe aqui ou
+              importe a folha.
             </p>
             <button
               type="submit"
@@ -278,12 +313,60 @@ export default function EquipePage() {
           <form onSubmit={onEditar} className="space-y-3">
             <Campo label="Nome" value={nome} onChange={setNome} required />
             <Campo label="Função" value={funcao} onChange={setFuncao} />
+            <Campo label="Valor da hora (R$)" value={custo} onChange={setCusto} />
             <button
               type="submit"
               disabled={enviando}
               className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
             >
               {enviando ? 'Salvando…' : 'Salvar'}
+            </button>
+          </form>
+        </Sheet>
+      )}
+
+      {folha === 'equipe' && (
+        <Sheet titulo="Alterar equipe" onClose={() => setFolha(null)}>
+          <form
+            className="space-y-3"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              if (!id) return
+              setEnviando(true)
+              setErro(null)
+              try {
+                await cadastroService.atualizarEquipe(id, { nome: eqNome.trim(), cor: eqCor })
+                setFolha(null)
+                await carregar()
+              } catch (err) {
+                setErro(mensagemErro(err, 'Não foi possível alterar a equipe.'))
+              } finally {
+                setEnviando(false)
+              }
+            }}
+          >
+            <Campo label="Nome" value={eqNome} onChange={setEqNome} required />
+            <div>
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Cor</p>
+              <div className="flex flex-wrap gap-2">
+                {CORES_EQUIPE.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setEqCor(c)}
+                    className={`h-9 w-9 rounded border ${eqCor.toUpperCase() === c ? 'border-ambar ring-2 ring-ambar' : 'border-[#CFCCC5]'}`}
+                    style={{ background: c }}
+                    aria-label={c}
+                  />
+                ))}
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={enviando}
+              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+            >
+              {enviando ? 'Salvando…' : 'Salvar equipe'}
             </button>
           </form>
         </Sheet>

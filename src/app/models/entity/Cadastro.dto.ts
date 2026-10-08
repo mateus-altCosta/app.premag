@@ -95,6 +95,12 @@ export interface CriarColaboradorDto {
   nome: string
   funcao: string
   equipeId: string
+  custoHora?: number | null
+}
+
+export interface CriarEquipeDto {
+  nome: string
+  cor: string
 }
 
 export interface CriarObraDto {

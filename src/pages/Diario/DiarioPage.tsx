@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import type { DiarioDto } from '../../app/models/entity/Operacao.dto'
 import { mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import { loadSession } from '../../app/services/premag/session'
 import { ehEncarregado, podeGerir } from '../../app/services/premag/perfil'
 import GradeFotos from '../../components/GradeFotos'
+
+function hojeIso() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+}
 
 function fmtData(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split('-')
@@ -14,6 +19,9 @@ function fmtData(iso: string) {
 
 export default function DiarioPage() {
   const session = loadSession()
+  const [params, setParams] = useSearchParams()
+  const hoje = hojeIso()
+  const data = (params.get('data') || hoje) > hoje ? hoje : params.get('data') || hoje
   const [diario, setDiario] = useState<DiarioDto | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [baixando, setBaixando] = useState(false)
@@ -22,16 +30,23 @@ export default function DiarioPage() {
 
   useEffect(() => {
     operacaoService
-      .diario({ equipeId })
+      .diario({ equipeId, data })
       .then(setDiario)
       .catch((e) => setErro(mensagemErro(e, 'Não foi possível carregar o diário.')))
-  }, [equipeId])
+  }, [equipeId, data])
+
+  function escolherData(iso: string) {
+    const next = !iso || iso > hoje ? hoje : iso
+    setParams(next === hoje ? {} : { data: next }, { replace: true })
+  }
 
   async function pdf() {
     setBaixando(true)
     setErro(null)
     try {
-      await operacaoService.diarioPdf({ equipeId, data: diario?.data })
+      const equipe = (diario?.escopo || 'equipe').replace(/[\\/:*?"<>|]/g, ' ').trim()
+      const rotulo = fmtData(data).replace(/\//g, '-')
+      await operacaoService.diarioPdf({ equipeId, data }, `Diário ${equipe} ${rotulo}.PDF`)
     } catch (e) {
       setErro(mensagemErro(e, 'Não foi possível gerar o PDF.'))
     } finally {
@@ -47,6 +62,16 @@ export default function DiarioPage() {
           Diário · {diario?.escopo ?? '…'}
         </p>
         <p className="mt-1 font-disp text-2xl">{diario ? fmtData(diario.data) : '…'}</p>
+        <label className="mt-3 block">
+          <span className="font-mono text-[10px] uppercase text-aco">Dia</span>
+          <input
+            type="date"
+            className="mt-1 w-full rounded border border-[#CFCCC5] bg-white px-2 py-2 text-sm"
+            value={data}
+            max={hoje}
+            onChange={(e) => escolherData(e.target.value)}
+          />
+        </label>
       </div>
 
       <div className="mt-4">
@@ -105,7 +130,8 @@ export default function DiarioPage() {
         <h3 className="mb-2 font-disp text-lg">Registro fotográfico</h3>
         {diario && diario.fotos.length === 0 ? (
           <p className="rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">
-            Nenhuma foto anexada hoje. Fotos de avanço entram no PDF do diário e sustentam a medição.
+            Nenhuma foto anexada {data === hoje ? 'hoje' : 'neste dia'}. Fotos de avanço entram no PDF do diário e
+            sustentam a medição.
           </p>
         ) : (
           <>
@@ -113,7 +139,7 @@ export default function DiarioPage() {
               fotos={diario?.fotos ?? []}
               podeExcluir={gerir}
               onExcluida={() =>
-                operacaoService.diario({ equipeId }).then(setDiario).catch(() => undefined)
+                operacaoService.diario({ equipeId, data }).then(setDiario).catch(() => undefined)
               }
             />
             {diario && diario.fotos.length > 0 && (
@@ -126,12 +152,14 @@ export default function DiarioPage() {
         )}
       </div>
 
-      <Link
-        to="/fechamento"
-        className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
-      >
-        Fechar o dia
-      </Link>
+      {data === hoje && (
+        <Link
+          to="/fechamento"
+          className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
+        >
+          Fechar o dia
+        </Link>
+      )}
 
       <button
         type="button"

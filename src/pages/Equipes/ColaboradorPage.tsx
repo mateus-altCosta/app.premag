@@ -43,6 +43,7 @@ export default function ColaboradorPage() {
   const [ajusteId, setAjusteId] = useState<string | null>(null)
   const [nomeEd, setNomeEd] = useState('')
   const [funcaoEd, setFuncaoEd] = useState('')
+  const [custoEd, setCustoEd] = useState('')
   const gerir = podeGerir(loadSession()?.perfil)
 
   async function carregar() {
@@ -71,6 +72,7 @@ export default function ColaboradorPage() {
     if (fechados.length) {
       return Math.max(...fechados.map((a) => paraMinutos(a.horaFim!)))
     }
+    if (colab.jornadaEntrada) return paraMinutos(colab.jornadaEntrada)
     return paraMinutos(turno.jornadaInicio)
   }, [turno, colab])
 
@@ -178,7 +180,7 @@ export default function ColaboradorPage() {
     )
   }
 
-  const podeIniciar = !!frenteId && (gap <= 10 || !!motivoId)
+  const podeIniciar = !!frenteId && (gap <= 10 || !!motivoId || obs.trim().length >= 3)
 
   return (
     <div className={aberto ? 'pb-16' : undefined}>
@@ -198,6 +200,7 @@ export default function ColaboradorPage() {
             onClick={() => {
               setNomeEd(colab.nome)
               setFuncaoEd(colab.funcao)
+              setCustoEd(colab.custoHora != null ? String(colab.custoHora).replace('.', ',') : '')
               setFolha('editar')
             }}
           >
@@ -462,10 +465,10 @@ export default function ColaboradorPage() {
                     </button>
                   ))}
                 </div>
-                {turno.motivosParada.find((m) => m.id === motivoId)?.exigeObservacao && (
+                {(turno.motivosParada.find((m) => m.id === motivoId)?.exigeObservacao || !motivoId) && (
                   <input
                     className="mt-2 w-full rounded border border-[#CFCCC5] px-3 py-2"
-                    placeholder="Observação"
+                    placeholder="Justificativa das horas"
                     value={obs}
                     onChange={(e) => setObs(e.target.value)}
                   />
@@ -640,9 +643,12 @@ export default function ColaboradorPage() {
               setEnviando(true)
               setErro(null)
               try {
+                const custoTxt = custoEd.trim().replace(/\s/g, '').replace(',', '.')
+                const custoNum = custoTxt ? Number(custoTxt) : undefined
                 await cadastroService.atualizarColaborador(colab.id, {
                   nome: nomeEd.trim(),
                   funcao: funcaoEd.trim() || '—',
+                  custoHora: custoNum != null && Number.isFinite(custoNum) && custoNum > 0 ? custoNum : null,
                 })
                 setFolha(null)
                 await carregar()
@@ -668,6 +674,16 @@ export default function ColaboradorPage() {
                 className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
                 value={funcaoEd}
                 onChange={(e) => setFuncaoEd(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Valor da hora (R$)</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={custoEd}
+                onChange={(e) => setCustoEd(e.target.value)}
+                inputMode="decimal"
+                placeholder="Ex.: 32,40"
               />
             </label>
             <button

@@ -34,13 +34,14 @@ export default function RelatoriosPage() {
       .catch((e) => setErro(mensagemErro(e, 'Não foi possível carregar o relatório.')))
   }, [tipo, periodo, obraId])
 
-  async function csv() {
+  async function exportar(formato: 'csv' | 'pdf') {
     setBaixando(true)
     setErro(null)
     try {
-      await operacaoService.relatorioCsv(tipo, periodo, obraId || undefined)
+      if (formato === 'pdf') await operacaoService.relatorioPdf(tipo, periodo, obraId || undefined)
+      else await operacaoService.relatorioCsv(tipo, periodo, obraId || undefined)
     } catch (e) {
-      setErro(mensagemErro(e, 'Não foi possível exportar o CSV.'))
+      setErro(mensagemErro(e, formato === 'pdf' ? 'Não foi possível gerar o PDF.' : 'Não foi possível exportar o CSV.'))
     } finally {
       setBaixando(false)
     }
@@ -54,8 +55,24 @@ export default function RelatoriosPage() {
 
   const n0 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
   const n2 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
-  const bloqueiaCsv =
-    tipo === 'produtividade' && (rel?.linhas ?? []).some((l) => l.amostraInsuficiente && l.quantidade > 0)
+  const linhas = rel?.linhas ?? []
+  const unidades = [...new Set(linhas.map((l) => l.unidade).filter(Boolean))]
+  const hhCab = unidades.length === 1 ? `HH/${unidades[0]}` : 'HH/un.'
+  const amostraCurta =
+    tipo === 'produtividade' && linhas.some((l) => l.amostraInsuficiente && l.quantidade > 0)
+
+  function unEst(l: RelatorioDto['linhas'][number]) {
+    if (l.acoEstimadoKg)
+      return `${n0(l.acoEstimadoKg)} ${l.taxaAcoUnidade || 'kg'}`
+    return `${n0(l.quantidadeConcluida)} ${l.unidade}`
+  }
+
+  function hhCel(l: RelatorioDto['linhas'][number]) {
+    if (l.hhPorUnidade == null) return '—'
+    const marca = l.amostraInsuficiente && l.quantidade > 0 ? ' *' : ''
+    if (unidades.length === 1) return `${n2(l.hhPorUnidade)}${marca}`
+    return `${n2(l.hhPorUnidade)} HH/${l.unidade}${marca}`
+  }
 
   return (
     <div>
@@ -98,22 +115,19 @@ export default function RelatoriosPage() {
                 <th className="pb-2">Frente</th>
                 <th>HH</th>
                 <th>Qtd</th>
-                <th>HH/un</th>
+                <th>{hhCab}</th>
                 <th>vs cotado</th>
               </tr>
             </thead>
             <tbody>
-              {(rel?.linhas ?? []).map((l) => (
+              {linhas.map((l) => (
                 <tr key={l.frenteId} className="border-t border-[#E4E1DA]">
                   <td className="py-2 pr-2">{l.frenteNome}</td>
                   <td>{n0(l.hh)}</td>
                   <td>
                     {n0(l.quantidade)} {l.unidade}
                   </td>
-                  <td>
-                    {l.hhPorUnidade != null ? n2(l.hhPorUnidade) : '—'}
-                    {l.amostraInsuficiente && l.quantidade > 0 ? ' *' : ''}
-                  </td>
+                  <td>{hhCel(l)}</td>
                   <td className={l.desvioPercentual && l.desvioPercentual > 0 ? 'text-red-800' : 'text-green-800'}>
                     {l.desvioPercentual != null
                       ? `${l.desvioPercentual > 0 ? '▲' : '▼'} ${n0(Math.abs(l.desvioPercentual))}%`
@@ -131,21 +145,21 @@ export default function RelatoriosPage() {
                 <th>Prev</th>
                 <th>Feito</th>
                 <th>%</th>
-                <th>Aço est.</th>
+                <th>Un. Est.</th>
               </tr>
             </thead>
             <tbody>
-              {(rel?.linhas ?? []).map((l) => (
+              {linhas.map((l) => (
                 <tr key={l.frenteId} className="border-t border-[#E4E1DA]">
                   <td className="py-2 pr-2">{l.frenteNome}</td>
-                  <td>{n0(l.quantidadePrevista)}</td>
-                  <td>{n0(l.quantidadeConcluida)}</td>
-                  <td>{n0(l.percentualAvanco)}%</td>
                   <td>
-                    {l.acoEstimadoKg
-                      ? `${n0(l.acoEstimadoKg)} ${l.taxaAcoUnidade || 'kg'}`
-                      : '—'}
+                    {n0(l.quantidadePrevista)} {l.unidade}
                   </td>
+                  <td>
+                    {n0(l.quantidadeConcluida)} {l.unidade}
+                  </td>
+                  <td>{n0(l.percentualAvanco)}%</td>
+                  <td>{unEst(l)}</td>
                 </tr>
               ))}
             </tbody>
@@ -153,16 +167,24 @@ export default function RelatoriosPage() {
         )}
       </div>
       <p className="mt-3 text-xs text-aco">{rel?.nota}</p>
-      {bloqueiaCsv && (
-        <p className="mt-2 text-xs text-red-800">
-          Índice com menos de 5 lançamentos não vai para o CSV (risco de cotação). Use o relatório de avanço ou espere mais amostra.
+      {amostraCurta && (
+        <p className="mt-2 text-xs text-aco">
+          Índice com * tem menos de 5 lançamentos. A Diretoria pode exportar mesmo assim.
         </p>
       )}
       <button
         type="button"
-        onClick={csv}
-        disabled={baixando || bloqueiaCsv}
-        className="mt-3 h-12 w-full rounded bg-grafite font-mono text-[11px] uppercase tracking-wider text-papel disabled:opacity-50"
+        onClick={() => void exportar('pdf')}
+        disabled={baixando}
+        className="mt-3 h-12 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-50"
+      >
+        {baixando ? 'Gerando…' : 'Exportar PDF'}
+      </button>
+      <button
+        type="button"
+        onClick={() => void exportar('csv')}
+        disabled={baixando}
+        className="mt-2 h-12 w-full rounded bg-grafite font-mono text-[11px] uppercase tracking-wider text-papel disabled:opacity-50"
       >
         {baixando ? 'Gerando…' : 'Exportar CSV'}
       </button>

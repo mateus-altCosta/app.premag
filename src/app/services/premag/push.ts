@@ -31,20 +31,24 @@ export async function ativarPush(): Promise<'ok' | 'sem-suporte' | 'negado' | 'd
   }
   if (!chave) return 'desligado'
 
-  const atual = await reg.pushManager.getSubscription()
-  const sub =
-    atual ??
-    (await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ParaBytes(chave) as BufferSource,
-    }))
-  const json = sub.toJSON()
-  await api.post('/push/inscrever', {
-    endpoint: json.endpoint,
-    p256dh: json.keys?.p256dh,
-    auth: json.keys?.auth,
-  })
-  return 'ok'
+  try {
+    const atual = await reg.pushManager.getSubscription()
+    const sub =
+      atual ??
+      (await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ParaBytes(chave) as BufferSource,
+      }))
+    const json = sub.toJSON()
+    await api.post('/push/inscrever', {
+      endpoint: json.endpoint,
+      p256dh: json.keys?.p256dh,
+      auth: json.keys?.auth,
+    })
+    return 'ok'
+  } catch {
+    return 'desligado'
+  }
 }
 
 export async function desligarPush(): Promise<void> {

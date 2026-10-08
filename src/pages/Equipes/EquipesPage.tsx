@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Sheet from '../../components/Sheet'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import type { EquipeDto } from '../../app/models/entity/Cadastro.dto'
 import { ehEncarregado, podeGerir } from '../../app/services/premag/perfil'
@@ -7,13 +8,23 @@ import { loadSession } from '../../app/services/premag/session'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import type { ImportacaoResultadoDto } from '../../app/models/entity/Operacao.dto'
 
+const CORES_EQUIPE = ['#F2A900', '#4A5560', '#2E7D5B', '#7B4B94', '#C1272D', '#2D6A9F']
+
 export default function EquipesPage() {
   const navigate = useNavigate()
   const session = loadSession()
   const [equipes, setEquipes] = useState<EquipeDto[]>([])
   const [erro, setErro] = useState<string | null>(null)
   const [importacao, setImportacao] = useState<ImportacaoResultadoDto | null>(null)
+  const [abrir, setAbrir] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+  const [nome, setNome] = useState('')
+  const [cor, setCor] = useState(CORES_EQUIPE[0])
   const gerir = podeGerir(session?.perfil)
+
+  async function recarregar() {
+    setEquipes(await cadastroService.equipes())
+  }
 
   useEffect(() => {
     if (ehEncarregado(session?.perfil) && session?.equipeId) {
@@ -52,6 +63,73 @@ export default function EquipesPage() {
         <p className="rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">
           Nenhuma equipe cadastrada ainda.
         </p>
+      )}
+      {gerir && (
+        <button
+          type="button"
+          onClick={() => {
+            setNome('')
+            setCor(CORES_EQUIPE[0])
+            setAbrir(true)
+          }}
+          className="w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
+        >
+          + Cadastrar equipe
+        </button>
+      )}
+      {abrir && (
+        <Sheet titulo="Cadastrar equipe" onClose={() => setAbrir(false)}>
+          <form
+            className="space-y-3"
+            onSubmit={async (e: FormEvent) => {
+              e.preventDefault()
+              setEnviando(true)
+              setErro(null)
+              try {
+                await cadastroService.criarEquipe({ nome: nome.trim(), cor })
+                setAbrir(false)
+                await recarregar()
+              } catch (err) {
+                setErro(mensagemErro(err, 'Não foi possível cadastrar a equipe.'))
+              } finally {
+                setEnviando(false)
+              }
+            }}
+          >
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                required
+                maxLength={60}
+              />
+            </label>
+            <div>
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Cor</p>
+              <div className="flex flex-wrap gap-2">
+                {CORES_EQUIPE.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCor(c)}
+                    className={`h-9 w-9 rounded border ${cor === c ? 'border-ambar ring-2 ring-ambar' : 'border-[#CFCCC5]'}`}
+                    style={{ background: c }}
+                    aria-label={c}
+                  />
+                ))}
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={enviando}
+              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+            >
+              {enviando ? 'Salvando…' : 'Cadastrar equipe'}
+            </button>
+          </form>
+        </Sheet>
       )}
       {gerir && (
         <div className="mt-4 rounded border border-[#CFCCC5] bg-papel p-4">

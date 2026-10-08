@@ -134,6 +134,7 @@ export default function AppShell() {
       ? [
           { to: '/equipes', label: 'Equipes', icone: 'equipe' },
           { to: '/obras', label: 'Obras', icone: 'obras' },
+          { to: '/diario', label: 'Diário', icone: 'diario' },
           { to: '/relatorios', label: 'Relatórios', icone: 'relatorios' },
           { to: '/fechamento', label: 'Dia', icone: 'dia' },
         ]

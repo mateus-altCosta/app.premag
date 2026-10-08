@@ -3,6 +3,7 @@ import type {
   CatalogoDto,
   ColaboradorDto,
   CriarColaboradorDto,
+  CriarEquipeDto,
   CriarFrenteDto,
   CriarObraDto,
   EquipeDto,
@@ -32,17 +33,30 @@ async function comCache<T>(chave: string, buscar: () => Promise<T>): Promise<T> 
 export const cadastroService = {
   catalogos: () => comCache('catalogos', () => api.get<CatalogoDto>('/catalogos').then((r) => r.data)),
   equipes: () => comCache('equipes', () => api.get<EquipeDto[]>('/equipes').then((r) => r.data)),
+  criarEquipe: (dto: CriarEquipeDto) => api.post<EquipeDto>('/equipes', dto).then((r) => r.data),
+  atualizarEquipe: (id: string, dto: CriarEquipeDto) =>
+    api.put<EquipeDto>(`/equipes/${id}`, dto).then((r) => r.data),
+  atualizarJornada: (dto: CatalogoDto['configuracao']) =>
+    api.put<CatalogoDto>('/catalogos/configuracao', dto).then((r) => r.data),
   colaboradores: (equipeId: string) =>
     comCache(`colaboradores:${equipeId}`, () =>
       api.get<ColaboradorDto[]>(`/equipes/${equipeId}/colaboradores`).then((r) => r.data),
     ),
   criarColaborador: (dto: CriarColaboradorDto) =>
     api.post<ColaboradorDto>('/colaboradores', dto).then((r) => r.data),
-  atualizarColaborador: (id: string, dto: { nome: string; funcao: string }) =>
+  atualizarColaborador: (id: string, dto: { nome: string; funcao: string; custoHora?: number | null }) =>
     api.put<ColaboradorDto>(`/colaboradores/${id}`, dto).then((r) => r.data),
-  transferir: (id: string, equipeId: string) =>
-    api.put<ColaboradorDto>(`/colaboradores/${id}/equipe`, { equipeId }).then((r) => r.data),
-  excluirColaborador: (id: string) => api.delete(`/colaboradores/${id}`),
+  transferir: async (id: string, equipeId: string) => {
+    const r = await api.put<ColaboradorDto>(`/colaboradores/${id}/equipe`, { equipeId })
+    const chaves = await kv.keys()
+    await Promise.all(chaves.filter((k) => k.startsWith('colaboradores:') || k.startsWith('turno:')).map((k) => kv.del(k)))
+    return r.data
+  },
+  excluirColaborador: async (id: string) => {
+    await api.delete(`/colaboradores/${id}`)
+    const chaves = await kv.keys()
+    await Promise.all(chaves.filter((k) => k.startsWith('colaboradores:') || k.startsWith('turno:')).map((k) => kv.del(k)))
+  },
   obras: () => comCache('obras', () => api.get<ObraDto[]>('/obras').then((r) => r.data)),
   obra: (id: string) => comCache(`obra:${id}`, () => api.get<ObraDto>(`/obras/${id}`).then((r) => r.data)),
   criarObra: (dto: CriarObraDto) => api.post<ObraDto>('/obras', dto).then((r) => r.data),
@@ -53,4 +67,5 @@ export const cadastroService = {
   criarFrente: (dto: CriarFrenteDto) => api.post<FrenteDto>('/frentes', dto).then((r) => r.data),
   atualizarFrente: (id: string, dto: CriarFrenteDto) =>
     api.put<FrenteDto>(`/frentes/${id}`, dto).then((r) => r.data),
+  encerrarFrente: (id: string) => api.delete(`/frentes/${id}`),
 }

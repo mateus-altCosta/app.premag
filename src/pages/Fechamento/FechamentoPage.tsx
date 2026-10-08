@@ -59,6 +59,11 @@ export default function FechamentoPage() {
   }
 
   async function reabrir() {
+    const texto = motivo.trim()
+    if (texto.length < 3) {
+      setErro('Informe o motivo da reabertura (pelo menos 3 letras).')
+      return
+    }
     setEnviando(true)
     setErro(null)
     try {
@@ -66,7 +71,7 @@ export default function FechamentoPage() {
         await operacaoService.reabrirDia({
           data,
           equipeId: equipeId || null,
-          motivoReabertura: motivo,
+          motivoReabertura: texto,
         }),
       )
       setMotivo('')
@@ -89,7 +94,10 @@ export default function FechamentoPage() {
           nem anexa foto neste dia — até a gerência reabrir com motivo. Passados {dia?.diasFechamento ?? 3} dias o
           calendário fecha sozinho e não reabre.
         </p>
-        <Link to="/diario" className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-ambar">
+        <Link
+          to={data === hojeIso() ? '/diario' : `/diario?data=${data}`}
+          className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-ambar"
+        >
           Abrir diário do dia
         </Link>
         {gerir && (
@@ -204,6 +212,9 @@ export default function FechamentoPage() {
           >
             {enviando ? 'Reabrindo…' : 'Reabrir o dia'}
           </button>
+          {erro && (
+            <p className="mt-2 text-sm text-red-700">{erro}</p>
+          )}
         </div>
       )}
     </div>

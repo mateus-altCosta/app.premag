@@ -26,13 +26,17 @@ export default function LoginPage() {
     setEnviando(true)
     try {
       await authService.login(usuario.trim(), senha)
-      await ativarPush()
-      navigate('/inicio', { replace: true })
     } catch {
       setErro('Usuário ou senha inválidos.')
-    } finally {
       setEnviando(false)
+      return
     }
+    try {
+      await ativarPush()
+    } catch {
+      /* Push é opcional: falha aqui não é senha errada. */
+    }
+    navigate('/inicio', { replace: true })
   }
 
   return (

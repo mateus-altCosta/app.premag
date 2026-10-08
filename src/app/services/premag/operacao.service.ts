@@ -22,12 +22,26 @@ export async function urlFotoAutenticada(id: string): Promise<string> {
   return url
 }
 
+function nomeDoAnexo(header: unknown, fallback: string) {
+  if (typeof header !== 'string' || !header) return fallback
+  const utf = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (utf) {
+    try {
+      return decodeURIComponent(utf[1])
+    } catch {
+      return fallback
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header)
+  return plain ? plain[1] : fallback
+}
+
 export async function baixarComAuth(path: string, nome: string): Promise<void> {
   const r = await api.get(path, { responseType: 'blob' })
   const url = URL.createObjectURL(r.data)
   const a = document.createElement('a')
   a.href = url
-  a.download = nome
+  a.download = nomeDoAnexo(r.headers['content-disposition'], nome)
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -69,12 +83,12 @@ export const operacaoService = {
   diario: (params?: { data?: string; equipeId?: string }) =>
     api.get<DiarioDto>('/diario', { params }).then((r) => r.data),
 
-  diarioPdf: (params?: { data?: string; equipeId?: string }) => {
+  diarioPdf: (params?: { data?: string; equipeId?: string }, nomeArquivo?: string) => {
     const q = new URLSearchParams()
     if (params?.data) q.set('data', params.data)
     if (params?.equipeId) q.set('equipeId', params.equipeId)
     const qs = q.toString()
-    return baixarComAuth(`/diario/pdf${qs ? `?${qs}` : ''}`, 'diario.pdf')
+    return baixarComAuth(`/diario/pdf${qs ? `?${qs}` : ''}`, nomeArquivo || 'diario.pdf')
   },
 
   ocorrencias: (pendentes = true) =>
@@ -96,6 +110,12 @@ export const operacaoService = {
     const q = new URLSearchParams({ tipo, periodo })
     if (obraId) q.set('obraId', obraId)
     return baixarComAuth(`/relatorios/csv?${q}`, `relatorio-${tipo}-${periodo}.csv`)
+  },
+
+  relatorioPdf: (tipo: string, periodo: string, obraId?: string) => {
+    const q = new URLSearchParams({ tipo, periodo })
+    if (obraId) q.set('obraId', obraId)
+    return baixarComAuth(`/relatorios/pdf?${q}`, `relatorio-${tipo}-${periodo}.pdf`)
   },
 
   importarAfd: (arquivo: File) => {
