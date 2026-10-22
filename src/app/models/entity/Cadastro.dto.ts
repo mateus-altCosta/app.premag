@@ -5,6 +5,7 @@ export interface EquipeDto {
   ativa: boolean
   presentes: number
   encarregadoId?: string | null
+  encarregadoNome?: string | null
 }
 
 export interface ColaboradorDto {
@@ -17,6 +18,7 @@ export interface ColaboradorDto {
   ativo: boolean
   origemCadastro: number
   custoHora?: number | null
+  codigoExterno?: string | null
 }
 
 export interface ObraDto {
@@ -75,6 +77,19 @@ export interface MotivoParadaDto {
   id: string
   nome: string
   exigeObservacao: boolean
+  ativo?: boolean
+}
+
+export interface CriarMotivoParadaDto {
+  nome: string
+  exigeObservacao: boolean
+  ativo?: boolean
+}
+
+export interface UsuarioResumoDto {
+  id: string
+  nome: string
+  equipeId?: string | null
 }
 
 export interface CatalogoDto {
@@ -88,6 +103,7 @@ export interface CatalogoDto {
     intervaloInicio: string
     intervaloFim: string
   }
+  encarregados?: UsuarioResumoDto[]
 }
 
 export interface CriarColaboradorDto {
@@ -96,11 +112,13 @@ export interface CriarColaboradorDto {
   funcao: string
   equipeId: string
   custoHora?: number | null
+  codigoExterno?: string | null
 }
 
 export interface CriarEquipeDto {
   nome: string
   cor: string
+  encarregadoId?: string | null
 }
 
 export interface CriarObraDto {

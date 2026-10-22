@@ -39,6 +39,7 @@ export interface TurnoColaboradorDto {
   minutosNaoApropriados: number
   minutosOciosos: number
   custoHora?: number | null
+  codigoExterno?: string | null
   aberto?: ApontamentoDto | null
   apontamentos: ApontamentoDto[]
 }

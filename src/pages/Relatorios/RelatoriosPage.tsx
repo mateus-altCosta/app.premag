@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ObraDto } from '../../app/models/entity/Cadastro.dto'
-import type { RelatorioDto } from '../../app/models/entity/Operacao.dto'
+import type { RelatorioDto, RelatorioLinhaDto } from '../../app/models/entity/Operacao.dto'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 
@@ -13,6 +13,41 @@ const PERIODOS = [
   { id: 'semana', label: 'Semana' },
   { id: 'mes', label: 'Mês' },
 ]
+
+const n0 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+const n2 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+
+function segmento(ativo: boolean) {
+  return `flex-1 rounded px-2 py-2 font-mono text-[11px] uppercase tracking-wider ${
+    ativo ? 'bg-ambar text-grafite' : 'text-aco'
+  }`
+}
+
+function Metrica({
+  rotulo,
+  valor,
+  tom,
+}: {
+  rotulo: string
+  valor: string
+  tom?: string
+}) {
+  return (
+    <div>
+      <p className={`font-disp text-[22px] leading-none tabular-nums ${tom ?? 'text-grafite'}`}>{valor}</p>
+      <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-aco">{rotulo}</p>
+    </div>
+  )
+}
+
+function desvio(l: RelatorioLinhaDto) {
+  if (l.desvioPercentual == null) return { texto: '—', tom: undefined as string | undefined }
+  const acima = l.desvioPercentual > 0
+  return {
+    texto: `${acima ? '▲' : '▼'} ${n0(Math.abs(l.desvioPercentual))}%`,
+    tom: acima ? 'text-red-800' : 'text-green-800',
+  }
+}
 
 export default function RelatoriosPage() {
   const [tipo, setTipo] = useState('produtividade')
@@ -47,125 +82,121 @@ export default function RelatoriosPage() {
     }
   }
 
-  function tag(ativo: boolean) {
-    return `rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-      ativo ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-    }`
-  }
-
-  const n0 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
-  const n2 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
   const linhas = rel?.linhas ?? []
   const unidades = [...new Set(linhas.map((l) => l.unidade).filter(Boolean))]
   const hhCab = unidades.length === 1 ? `HH/${unidades[0]}` : 'HH/un.'
   const amostraCurta =
     tipo === 'produtividade' && linhas.some((l) => l.amostraInsuficiente && l.quantidade > 0)
+  const tipoNome = TIPOS.find((t) => t.id === tipo)?.label ?? 'Relatório'
+  const periodoNome = PERIODOS.find((p) => p.id === periodo)?.label ?? ''
 
-  function unEst(l: RelatorioDto['linhas'][number]) {
-    if (l.acoEstimadoKg)
-      return `${n0(l.acoEstimadoKg)} ${l.taxaAcoUnidade || 'kg'}`
-    return `${n0(l.quantidadeConcluida)} ${l.unidade}`
+  function indice(l: RelatorioLinhaDto) {
+    if (l.hhPorUnidade == null) return { valor: '—', rotulo: hhCab }
+    const marca = l.amostraInsuficiente && l.quantidade > 0 ? ' *' : ''
+    return {
+      valor: `${n2(l.hhPorUnidade)}${marca}`,
+      rotulo: unidades.length === 1 ? hhCab : `HH/${l.unidade}`,
+    }
   }
 
-  function hhCel(l: RelatorioDto['linhas'][number]) {
-    if (l.hhPorUnidade == null) return '—'
-    const marca = l.amostraInsuficiente && l.quantidade > 0 ? ' *' : ''
-    if (unidades.length === 1) return `${n2(l.hhPorUnidade)}${marca}`
-    return `${n2(l.hhPorUnidade)} HH/${l.unidade}${marca}`
+  function unEst(l: RelatorioLinhaDto) {
+    if (l.acoEstimadoKg) return `${n0(l.acoEstimadoKg)} ${l.taxaAcoUnidade || 'kg'}`
+    return `${n0(l.quantidadeConcluida)} ${l.unidade}`
   }
 
   return (
     <div>
       {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
+
       <div className="rounded border border-[#CFCCC5] bg-papel p-4">
-        <p className="mb-2 font-mono text-[10px] uppercase text-aco">Tipo</p>
-        <div className="mb-3 flex flex-wrap gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Relatório · {tipoNome}</p>
+        <p className="mt-1 font-disp text-2xl leading-tight">{periodoNome}</p>
+
+        <div className="mt-4 flex gap-1 rounded border border-[#CFCCC5] bg-white p-1">
           {TIPOS.map((t) => (
-            <button key={t.id} type="button" className={tag(tipo === t.id)} onClick={() => setTipo(t.id)}>
+            <button key={t.id} type="button" className={segmento(tipo === t.id)} onClick={() => setTipo(t.id)}>
               {t.label}
             </button>
           ))}
         </div>
-        <p className="mb-2 font-mono text-[10px] uppercase text-aco">Período</p>
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mt-2 flex gap-1 rounded border border-[#CFCCC5] bg-white p-1">
           {PERIODOS.map((p) => (
-            <button key={p.id} type="button" className={tag(periodo === p.id)} onClick={() => setPeriodo(p.id)}>
+            <button key={p.id} type="button" className={segmento(periodo === p.id)} onClick={() => setPeriodo(p.id)}>
               {p.label}
             </button>
           ))}
         </div>
-        <p className="mb-2 font-mono text-[10px] uppercase text-aco">Obra</p>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className={tag(!obraId)} onClick={() => setObraId('')}>
-            todas
-          </button>
-          {obras.filter((o) => !o.interna).map((o) => (
-            <button key={o.id} type="button" className={tag(obraId === o.id)} onClick={() => setObraId(o.id)}>
-              {o.nome}
-            </button>
-          ))}
+        <label className="mt-3 block">
+          <span className="font-mono text-[10px] uppercase text-aco">Obra</span>
+          <select
+            className="mt-1 w-full rounded border border-[#CFCCC5] bg-white px-2 py-2 text-sm"
+            value={obraId}
+            onChange={(e) => setObraId(e.target.value)}
+          >
+            <option value="">Todas as obras</option>
+            {obras
+              .filter((o) => !o.interna)
+              .map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.nome}
+                </option>
+              ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="mt-4">
+        <h3 className="font-disp text-lg">Frentes</h3>
+        <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">
+          {linhas.length} {linhas.length === 1 ? 'frente' : 'frentes'}
+        </p>
+
+        {linhas.length === 0 && (
+          <p className="rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">
+            Nenhuma frente neste recorte.
+          </p>
+        )}
+
+        <div className="space-y-2">
+          {tipo === 'produtividade'
+            ? linhas.map((l) => {
+                const hhUn = indice(l)
+                const vs = desvio(l)
+                return (
+                  <article key={l.frenteId} className="rounded border border-[#CFCCC5] bg-papel p-3">
+                    <p className="font-disp text-[16px] leading-tight">{l.frenteNome}</p>
+                    <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                      <Metrica rotulo="Horas" valor={`${n0(l.hh)} HH`} />
+                      <Metrica rotulo="Quantidade" valor={`${n0(l.quantidade)} ${l.unidade}`} />
+                      <Metrica rotulo={hhUn.rotulo} valor={hhUn.valor} />
+                      <Metrica rotulo="vs cotado" valor={vs.texto} tom={vs.tom} />
+                    </div>
+                  </article>
+                )
+              })
+            : linhas.map((l) => (
+                <article key={l.frenteId} className="rounded border border-[#CFCCC5] bg-papel p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-disp text-[16px] leading-tight">{l.frenteNome}</p>
+                    <p className="shrink-0 font-disp text-xl tabular-nums">{n0(l.percentualAvanco)}%</p>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded bg-[#E4E1DA]">
+                    <div
+                      className="h-full bg-ambar"
+                      style={{ width: `${Math.min(100, Math.max(0, l.percentualAvanco))}%` }}
+                    />
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+                    <Metrica rotulo="Previsto" valor={`${n0(l.quantidadePrevista)} ${l.unidade}`} />
+                    <Metrica rotulo="Feito" valor={`${n0(l.quantidadeConcluida)} ${l.unidade}`} />
+                    <Metrica rotulo="Un. est." valor={unEst(l)} />
+                    <Metrica rotulo="Horas" valor={`${n0(l.hh)} HH`} />
+                  </div>
+                </article>
+              ))}
         </div>
       </div>
 
-      <div className="mt-3 overflow-x-auto rounded border border-[#CFCCC5] bg-papel p-3">
-        {tipo === 'produtividade' ? (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="font-mono text-[10px] uppercase text-aco">
-                <th className="pb-2">Frente</th>
-                <th>HH</th>
-                <th>Qtd</th>
-                <th>{hhCab}</th>
-                <th>vs cotado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {linhas.map((l) => (
-                <tr key={l.frenteId} className="border-t border-[#E4E1DA]">
-                  <td className="py-2 pr-2">{l.frenteNome}</td>
-                  <td>{n0(l.hh)}</td>
-                  <td>
-                    {n0(l.quantidade)} {l.unidade}
-                  </td>
-                  <td>{hhCel(l)}</td>
-                  <td className={l.desvioPercentual && l.desvioPercentual > 0 ? 'text-red-800' : 'text-green-800'}>
-                    {l.desvioPercentual != null
-                      ? `${l.desvioPercentual > 0 ? '▲' : '▼'} ${n0(Math.abs(l.desvioPercentual))}%`
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="font-mono text-[10px] uppercase text-aco">
-                <th className="pb-2">Frente</th>
-                <th>Prev</th>
-                <th>Feito</th>
-                <th>%</th>
-                <th>Un. Est.</th>
-              </tr>
-            </thead>
-            <tbody>
-              {linhas.map((l) => (
-                <tr key={l.frenteId} className="border-t border-[#E4E1DA]">
-                  <td className="py-2 pr-2">{l.frenteNome}</td>
-                  <td>
-                    {n0(l.quantidadePrevista)} {l.unidade}
-                  </td>
-                  <td>
-                    {n0(l.quantidadeConcluida)} {l.unidade}
-                  </td>
-                  <td>{n0(l.percentualAvanco)}%</td>
-                  <td>{unEst(l)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
       <p className="mt-3 text-xs text-aco">{rel?.nota}</p>
       {amostraCurta && (
         <p className="mt-2 text-xs text-aco">

@@ -44,6 +44,7 @@ export default function ColaboradorPage() {
   const [nomeEd, setNomeEd] = useState('')
   const [funcaoEd, setFuncaoEd] = useState('')
   const [custoEd, setCustoEd] = useState('')
+  const [codigoEd, setCodigoEd] = useState('')
   const gerir = podeGerir(loadSession()?.perfil)
 
   async function carregar() {
@@ -201,6 +202,7 @@ export default function ColaboradorPage() {
               setNomeEd(colab.nome)
               setFuncaoEd(colab.funcao)
               setCustoEd(colab.custoHora != null ? String(colab.custoHora).replace('.', ',') : '')
+              setCodigoEd(colab.codigoExterno ?? '')
               setFolha('editar')
             }}
           >
@@ -212,6 +214,11 @@ export default function ColaboradorPage() {
           {colab.custoHora != null && (
             <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
               {fmtCustoHora(colab.custoHora)}
+            </span>
+          )}
+          {colab.codigoExterno && (
+            <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+              {colab.codigoExterno}
             </span>
           )}
           <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
@@ -649,6 +656,7 @@ export default function ColaboradorPage() {
                   nome: nomeEd.trim(),
                   funcao: funcaoEd.trim() || '—',
                   custoHora: custoNum != null && Number.isFinite(custoNum) && custoNum > 0 ? custoNum : null,
+                  codigoExterno: codigoEd.trim() || null,
                 })
                 setFolha(null)
                 await carregar()
@@ -674,6 +682,15 @@ export default function ColaboradorPage() {
                 className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
                 value={funcaoEd}
                 onChange={(e) => setFuncaoEd(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Código externo</span>
+              <input
+                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                value={codigoEd}
+                onChange={(e) => setCodigoEd(e.target.value)}
+                maxLength={40}
               />
             </label>
             <label className="block">

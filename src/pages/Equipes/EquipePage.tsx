@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Sheet from '../../components/Sheet'
 import Regua from '../../components/Regua'
-import type { EquipeDto } from '../../app/models/entity/Cadastro.dto'
+import type { EquipeDto, UsuarioResumoDto } from '../../app/models/entity/Cadastro.dto'
 import type { TurnoColaboradorDto, TurnoDto } from '../../app/models/entity/Turno.dto'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import { turnoService } from '../../app/services/premag/turno.service'
@@ -39,14 +39,22 @@ export default function EquipePage() {
   const [custo, setCusto] = useState('')
   const [eqNome, setEqNome] = useState('')
   const [eqCor, setEqCor] = useState(CORES_EQUIPE[1])
+  const [eqEnc, setEqEnc] = useState('')
+  const [encarregados, setEncarregados] = useState<UsuarioResumoDto[]>([])
+  const [codigo, setCodigo] = useState('')
   const [destino, setDestino] = useState('')
   const [enviando, setEnviando] = useState(false)
 
   async function carregar() {
     if (!id) return
-    const [t, eqs] = await Promise.all([turnoService.obter(id), cadastroService.equipes()])
+    const [t, eqs, cat] = await Promise.all([
+      turnoService.obter(id),
+      cadastroService.equipes(),
+      gerir ? cadastroService.catalogos() : Promise.resolve(null),
+    ])
     setTurno(t)
     setEquipes(eqs)
+    if (cat) setEncarregados(cat.encarregados ?? [])
   }
 
   useEffect(() => {
@@ -73,12 +81,14 @@ export default function EquipePage() {
         funcao: funcao.trim() || '—',
         equipeId: id,
         custoHora: parseCusto(custo) ?? null,
+        codigoExterno: codigo.trim() || null,
       })
       setFolha(null)
       setMat('')
       setNome('')
       setFuncao('')
       setCusto('')
+      setCodigo('')
       await carregar()
     } catch (err) {
       setErro(mensagemErro(err, 'Não foi possível cadastrar.'))
@@ -114,6 +124,7 @@ export default function EquipePage() {
         nome: nome.trim(),
         funcao: funcao.trim() || '—',
         custoHora: parseCusto(custo) ?? null,
+        codigoExterno: codigo.trim() || null,
       })
       setFolha(null)
       setAlvo(null)
@@ -149,6 +160,11 @@ export default function EquipePage() {
       <div className="mb-3 rounded border border-[#CFCCC5] bg-papel p-4">
         <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Situação agora</p>
         <p className="mt-1 font-disp text-xl">{turno?.equipeNome ?? 'Equipe'}</p>
+        {equipes.find((e) => e.id === id)?.encarregadoNome && (
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-aco">
+            Encarregado · {equipes.find((e) => e.id === id)?.encarregadoNome}
+          </p>
+        )}
         {gerir && (
           <button
             type="button"
@@ -157,6 +173,7 @@ export default function EquipePage() {
               const atual = equipes.find((e) => e.id === id)
               setEqNome(atual?.nome ?? turno?.equipeNome ?? '')
               setEqCor(atual?.cor ?? CORES_EQUIPE[1])
+              setEqEnc(atual?.encarregadoId ?? '')
               setFolha('equipe')
             }}
           >
@@ -243,6 +260,7 @@ export default function EquipePage() {
                       setNome(c.nome)
                       setFuncao(c.funcao)
                       setCusto(c.custoHora != null ? String(c.custoHora).replace('.', ',') : '')
+                      setCodigo(c.codigoExterno ?? '')
                       setFolha('editar')
                     }}
                   >
@@ -278,6 +296,7 @@ export default function EquipePage() {
           type="button"
           onClick={() => {
             setCusto('')
+            setCodigo('')
             setFolha('novo')
           }}
           className="mt-3 w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
@@ -292,10 +311,11 @@ export default function EquipePage() {
             <Campo label="Matrícula" value={mat} onChange={setMat} required />
             <Campo label="Nome" value={nome} onChange={setNome} required />
             <Campo label="Função" value={funcao} onChange={setFuncao} />
+            <Campo label="Código externo" value={codigo} onChange={setCodigo} />
             <Campo label="Valor da hora (R$)" value={custo} onChange={setCusto} />
             <p className="text-xs text-aco">
-              Sem valor da hora, o funcionário entra no diário e fica fora do relatório de custo. Informe aqui ou
-              importe a folha.
+              Código externo é o documento da folha (mesmo da coluna do CSV). Sem valor da hora, o funcionário entra
+              no diário e fica fora do relatório de custo.
             </p>
             <button
               type="submit"
@@ -313,6 +333,7 @@ export default function EquipePage() {
           <form onSubmit={onEditar} className="space-y-3">
             <Campo label="Nome" value={nome} onChange={setNome} required />
             <Campo label="Função" value={funcao} onChange={setFuncao} />
+            <Campo label="Código externo" value={codigo} onChange={setCodigo} />
             <Campo label="Valor da hora (R$)" value={custo} onChange={setCusto} />
             <button
               type="submit"
@@ -335,7 +356,11 @@ export default function EquipePage() {
               setEnviando(true)
               setErro(null)
               try {
-                await cadastroService.atualizarEquipe(id, { nome: eqNome.trim(), cor: eqCor })
+                await cadastroService.atualizarEquipe(id, {
+                  nome: eqNome.trim(),
+                  cor: eqCor,
+                  encarregadoId: eqEnc || null,
+                })
                 setFolha(null)
                 await carregar()
               } catch (err) {
@@ -346,6 +371,32 @@ export default function EquipePage() {
             }}
           >
             <Campo label="Nome" value={eqNome} onChange={setEqNome} required />
+            <div>
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Encarregado</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEqEnc('')}
+                  className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
+                    !eqEnc ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                  }`}
+                >
+                  Nenhum
+                </button>
+                {encarregados.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => setEqEnc(u.id)}
+                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
+                      eqEnc === u.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                    }`}
+                  >
+                    {u.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Cor</p>
               <div className="flex flex-wrap gap-2">

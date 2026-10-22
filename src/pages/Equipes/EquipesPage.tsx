@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sheet from '../../components/Sheet'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
-import type { EquipeDto } from '../../app/models/entity/Cadastro.dto'
+import type { EquipeDto, UsuarioResumoDto } from '../../app/models/entity/Cadastro.dto'
 import { ehEncarregado, podeGerir } from '../../app/services/premag/perfil'
 import { loadSession } from '../../app/services/premag/session'
 import { operacaoService } from '../../app/services/premag/operacao.service'
@@ -20,6 +20,8 @@ export default function EquipesPage() {
   const [enviando, setEnviando] = useState(false)
   const [nome, setNome] = useState('')
   const [cor, setCor] = useState(CORES_EQUIPE[0])
+  const [encarregadoId, setEncarregadoId] = useState('')
+  const [encarregados, setEncarregados] = useState<UsuarioResumoDto[]>([])
   const gerir = podeGerir(session?.perfil)
 
   async function recarregar() {
@@ -35,6 +37,12 @@ export default function EquipesPage() {
       .equipes()
       .then(setEquipes)
       .catch((e) => setErro(mensagemErro(e, 'Não foi possível carregar as equipes.')))
+    if (gerir) {
+      cadastroService
+        .catalogos()
+        .then((c) => setEncarregados(c.encarregados ?? []))
+        .catch(() => undefined)
+    }
   }, [navigate, session?.equipeId, session?.perfil])
 
   return (
@@ -53,6 +61,7 @@ export default function EquipesPage() {
               <span className="block font-disp text-[17px]">{e.nome}</span>
               <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-wider text-aco">
                 {e.presentes} na equipe
+                {e.encarregadoNome ? ` · ${e.encarregadoNome}` : ''}
               </span>
             </span>
             <span className="font-mono text-[10px] uppercase tracking-wider text-aco">Abrir</span>
@@ -70,6 +79,7 @@ export default function EquipesPage() {
           onClick={() => {
             setNome('')
             setCor(CORES_EQUIPE[0])
+            setEncarregadoId('')
             setAbrir(true)
           }}
           className="w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
@@ -86,7 +96,11 @@ export default function EquipesPage() {
               setEnviando(true)
               setErro(null)
               try {
-                await cadastroService.criarEquipe({ nome: nome.trim(), cor })
+                await cadastroService.criarEquipe({
+                  nome: nome.trim(),
+                  cor,
+                  encarregadoId: encarregadoId || null,
+                })
                 setAbrir(false)
                 await recarregar()
               } catch (err) {
@@ -106,6 +120,32 @@ export default function EquipesPage() {
                 maxLength={60}
               />
             </label>
+            <div>
+              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Encarregado</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEncarregadoId('')}
+                  className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
+                    !encarregadoId ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                  }`}
+                >
+                  Nenhum
+                </button>
+                {encarregados.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => setEncarregadoId(u.id)}
+                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
+                      encarregadoId === u.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                    }`}
+                  >
+                    {u.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Cor</p>
               <div className="flex flex-wrap gap-2">
@@ -136,7 +176,7 @@ export default function EquipesPage() {
           <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Importar folha</p>
           <p className="mt-1 text-xs text-aco">
             AFD (REP, registros tipo 3/4) atualiza jornada do dia. CSV:{' '}
-            <code>matricula;nome;funcao;equipeNome;custoHora</code>
+            <code>matricula;nome;funcao;equipeNome;custoHora;codigoExterno</code>
           </p>
           <label className="mt-3 block">
             <span className="mb-1 block font-mono text-[10px] uppercase text-aco">Arquivo AFD</span>

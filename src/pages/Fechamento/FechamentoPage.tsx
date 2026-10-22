@@ -17,6 +17,14 @@ function fmtData(iso: string) {
   return `${d}/${m}/${y}`
 }
 
+function diarioDoDia(data: string, equipeId: string) {
+  const q = new URLSearchParams()
+  if (data !== hojeIso()) q.set('data', data)
+  if (equipeId) q.set('equipe', equipeId)
+  const qs = q.toString()
+  return qs ? `/diario?${qs}` : '/diario'
+}
+
 export default function FechamentoPage() {
   const session = loadSession()
   const gerir = podeGerir(session?.perfil)
@@ -95,7 +103,7 @@ export default function FechamentoPage() {
           calendário fecha sozinho e não reabre.
         </p>
         <Link
-          to={data === hojeIso() ? '/diario' : `/diario?data=${data}`}
+          to={diarioDoDia(data, equipeId)}
           className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-ambar"
         >
           Abrir diário do dia

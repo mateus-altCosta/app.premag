@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import type { EquipeDto } from '../../app/models/entity/Cadastro.dto'
 import type { DiarioDto } from '../../app/models/entity/Operacao.dto'
-import { mensagemErro } from '../../app/services/premag/cadastro.service'
+import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import { loadSession } from '../../app/services/premag/session'
 import { ehEncarregado, podeGerir } from '../../app/services/premag/perfil'
@@ -25,8 +26,14 @@ export default function DiarioPage() {
   const [diario, setDiario] = useState<DiarioDto | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [baixando, setBaixando] = useState(false)
-  const equipeId = ehEncarregado(session?.perfil) ? session?.equipeId ?? undefined : undefined
+  const [equipes, setEquipes] = useState<EquipeDto[]>([])
   const gerir = podeGerir(session?.perfil)
+  const equipeFiltro = ehEncarregado(session?.perfil) ? session?.equipeId ?? '' : params.get('equipe') || ''
+  const equipeId = equipeFiltro || undefined
+
+  useEffect(() => {
+    if (gerir) cadastroService.equipes().then(setEquipes).catch(() => undefined)
+  }, [gerir])
 
   useEffect(() => {
     operacaoService
@@ -37,7 +44,17 @@ export default function DiarioPage() {
 
   function escolherData(iso: string) {
     const next = !iso || iso > hoje ? hoje : iso
-    setParams(next === hoje ? {} : { data: next }, { replace: true })
+    const q: Record<string, string> = {}
+    if (next !== hoje) q.data = next
+    if (gerir && equipeFiltro) q.equipe = equipeFiltro
+    setParams(q, { replace: true })
+  }
+
+  function escolherEquipe(id: string) {
+    const q: Record<string, string> = {}
+    if (data !== hoje) q.data = data
+    if (id) q.equipe = id
+    setParams(q, { replace: true })
   }
 
   async function pdf() {
@@ -72,6 +89,23 @@ export default function DiarioPage() {
             onChange={(e) => escolherData(e.target.value)}
           />
         </label>
+        {gerir && (
+          <label className="mt-3 block">
+            <span className="font-mono text-[10px] uppercase text-aco">Equipe</span>
+            <select
+              className="mt-1 w-full rounded border border-[#CFCCC5] bg-white px-2 py-2 text-sm"
+              value={equipeFiltro}
+              onChange={(e) => escolherEquipe(e.target.value)}
+            >
+              <option value="">Planta inteira</option>
+              {equipes.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       <div className="mt-4">

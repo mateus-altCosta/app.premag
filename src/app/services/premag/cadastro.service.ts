@@ -5,9 +5,11 @@ import type {
   CriarColaboradorDto,
   CriarEquipeDto,
   CriarFrenteDto,
+  CriarMotivoParadaDto,
   CriarObraDto,
   EquipeDto,
   FrenteDto,
+  MotivoParadaDto,
   ObraDto,
 } from '../../models/entity/Cadastro.dto'
 import { kv } from './idb'
@@ -38,14 +40,30 @@ export const cadastroService = {
     api.put<EquipeDto>(`/equipes/${id}`, dto).then((r) => r.data),
   atualizarJornada: (dto: CatalogoDto['configuracao']) =>
     api.put<CatalogoDto>('/catalogos/configuracao', dto).then((r) => r.data),
+  criarMotivo: async (dto: CriarMotivoParadaDto) => {
+    const r = await api.post<MotivoParadaDto>('/catalogos/motivos', dto)
+    await kv.del('catalogos')
+    return r.data
+  },
+  atualizarMotivo: async (id: string, dto: CriarMotivoParadaDto) => {
+    const r = await api.put<MotivoParadaDto>(`/catalogos/motivos/${id}`, dto)
+    await kv.del('catalogos')
+    return r.data
+  },
+  inativarMotivo: async (id: string) => {
+    await api.delete(`/catalogos/motivos/${id}`)
+    await kv.del('catalogos')
+  },
   colaboradores: (equipeId: string) =>
     comCache(`colaboradores:${equipeId}`, () =>
       api.get<ColaboradorDto[]>(`/equipes/${equipeId}/colaboradores`).then((r) => r.data),
     ),
   criarColaborador: (dto: CriarColaboradorDto) =>
     api.post<ColaboradorDto>('/colaboradores', dto).then((r) => r.data),
-  atualizarColaborador: (id: string, dto: { nome: string; funcao: string; custoHora?: number | null }) =>
-    api.put<ColaboradorDto>(`/colaboradores/${id}`, dto).then((r) => r.data),
+  atualizarColaborador: (
+    id: string,
+    dto: { nome: string; funcao: string; custoHora?: number | null; codigoExterno?: string | null },
+  ) => api.put<ColaboradorDto>(`/colaboradores/${id}`, dto).then((r) => r.data),
   transferir: async (id: string, equipeId: string) => {
     const r = await api.put<ColaboradorDto>(`/colaboradores/${id}/equipe`, { equipeId })
     const chaves = await kv.keys()
