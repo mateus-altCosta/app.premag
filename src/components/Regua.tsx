@@ -33,7 +33,7 @@ export default function Regua({
   if (fim - cur > 1) segs.push({ w: fim - cur, cor: null })
 
   return (
-    <div className="flex h-5 overflow-hidden rounded border border-[#CFCCC5]">
+    <div className="flex h-2 overflow-hidden rounded-full bg-[#E4E1DA]">
       {segs.map((s, i) => (
         <span
           key={i}

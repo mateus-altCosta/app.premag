@@ -5,6 +5,16 @@ import { cadastroService, mensagemErro } from '../../app/services/premag/cadastr
 import { operacaoService } from '../../app/services/premag/operacao.service'
 import { ativarPush, desligarPush } from '../../app/services/premag/push'
 
+function hojeIso() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+}
+
+function fmtQuando(iso?: string | null) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleString('pt-BR')
+}
+
 export default function AlertasPage() {
   const [lista, setLista] = useState<OcorrenciaDto[]>([])
   const [erro, setErro] = useState<string | null>(null)
@@ -14,15 +24,22 @@ export default function AlertasPage() {
   const [motivos, setMotivos] = useState<MotivoParadaDto[]>([])
   const [enviando, setEnviando] = useState<string | null>(null)
   const [pushMsg, setPushMsg] = useState<string | null>(null)
+  const [pendentes, setPendentes] = useState(true)
+  const [data, setData] = useState(hojeIso())
 
-  async function carregar() {
-    setLista(await operacaoService.ocorrencias(true))
+  async function carregar(abertos = pendentes, dia = data) {
+    setErro(null)
+    setLista([])
+    setLista(await operacaoService.ocorrencias(abertos, dia))
   }
 
   useEffect(() => {
-    carregar().catch((e) => setErro(mensagemErro(e, 'Não foi possível carregar os alertas.')))
     cadastroService.catalogos().then((c) => setMotivos(c.motivosParada)).catch(() => undefined)
   }, [])
+
+  useEffect(() => {
+    carregar(pendentes, data).catch((e) => setErro(mensagemErro(e, 'Não foi possível carregar os alertas.')))
+  }, [pendentes, data])
 
   const esc2 = lista.filter((a) => a.severidade === 2)
   const outros = lista.filter((a) => a.severidade !== 2)
@@ -48,8 +65,8 @@ export default function AlertasPage() {
     return (
       <div
         key={a.id}
-        className={`rounded border bg-papel p-3 ${
-          crit ? 'border-red-800/50' : 'border-ambar/60'
+        className={`card p-3.5 ${
+          crit ? 'border-alerta/40 ring-1 ring-alerta/10' : 'border-ambar/50'
         }`}
       >
         <div className="flex items-start justify-between gap-2">
@@ -59,15 +76,23 @@ export default function AlertasPage() {
           </span>
         </div>
         <p className="mt-1.5 text-sm text-aco">{a.detalhe}</p>
-        {crit && (
+        {!pendentes && (
+          <p className="mt-2 text-xs text-aco">
+            {a.reconhecidaPorNome ? `${a.reconhecidaPorNome} · ` : ''}
+            {fmtQuando(a.reconhecidaEm)}
+            {a.justificativa ? ` · ${a.justificativa}` : ''}
+            {a.gerouParada ? ' · gerou parada' : ''}
+          </p>
+        )}
+        {pendentes && crit && (
           <input
-            className="mt-2 w-full rounded border border-[#CFCCC5] px-3 py-2 text-sm"
+            className="input mt-2"
             placeholder="Justificativa"
             value={justif[a.id] ?? ''}
             onChange={(e) => setJustif((j) => ({ ...j, [a.id]: e.target.value }))}
           />
         )}
-        {a.colaboradorId && (
+        {pendentes && a.colaboradorId && (
           <label className="mt-2 flex items-center gap-2 text-sm text-aco">
             <input
               type="checkbox"
@@ -77,38 +102,38 @@ export default function AlertasPage() {
             Lançar a parada correspondente
           </label>
         )}
-        {gerar[a.id] && (
+        {pendentes && gerar[a.id] && (
           <div className="mt-2 flex flex-wrap gap-2">
             {motivos.map((m) => (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => setMotivo((x) => ({ ...x, [a.id]: m.id }))}
-                className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                  motivo[a.id] === m.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                }`}
+                className={`chip ${motivo[a.id] === m.id ? 'chip-on' : ''}`}
               >
                 {m.nome}
               </button>
             ))}
           </div>
         )}
-        <button
-          type="button"
-          disabled={enviando === a.id}
-          onClick={() => reconhecer(a.id, crit)}
-          className="mt-2 font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
-        >
-          {enviando === a.id ? 'Salvando…' : 'Reconhecer'}
-        </button>
+        {pendentes && (
+          <button
+            type="button"
+            disabled={enviando === a.id}
+            onClick={() => reconhecer(a.id, crit)}
+            className="btn-link mt-2"
+          >
+            {enviando === a.id ? 'Salvando…' : 'Reconhecer'}
+          </button>
+        )}
       </div>
     )
   }
 
   return (
     <div>
-      <div className="rounded border border-[#3d4348] bg-grafite p-4 text-papel">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-ambar">Regra de escalonamento</p>
+      <div className="rounded-xl border border-white/10 bg-grafite p-4 text-papel shadow-sm">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ambar">Regra de escalonamento</p>
         <p className="mt-1.5 text-sm text-[#9aa2a9]">
           Colaborador presente e fora de qualquer frente por mais de 60 minutos corridos gera notificação para Gerência
           e Diretoria. O relógio desconta o intervalo e ignora faltas, férias e afastados.
@@ -143,8 +168,38 @@ export default function AlertasPage() {
         </button>
         {pushMsg && <p className="mt-2 text-sm text-[#9aa2a9]">{pushMsg}</p>}
       </div>
-      {erro && <p className="mt-3 text-sm text-red-700">{erro}</p>}
-      {lista.length === 0 && !erro && <p className="mt-4 rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">Nada pendente agora.</p>}
+      {erro && <p className="alert alert-erro mt-3">{erro}</p>}
+      <div className="seg mt-3">
+        <button
+          type="button"
+          className={`seg-item ${pendentes ? 'seg-item-on' : ''}`}
+          onClick={() => setPendentes(true)}
+        >
+          Pendentes
+        </button>
+        <button
+          type="button"
+          className={`seg-item ${!pendentes ? 'seg-item-on' : ''}`}
+          onClick={() => setPendentes(false)}
+        >
+          Reconhecidos
+        </button>
+      </div>
+      <label className="mt-3 block">
+        <span className="label">Dia</span>
+        <input
+          type="date"
+          className="input"
+          value={data}
+          max={hojeIso()}
+          onChange={(e) => setData(e.target.value || hojeIso())}
+        />
+      </label>
+      {lista.length === 0 && !erro && (
+        <p className="empty mt-4">
+          {pendentes ? 'Nada pendente agora.' : 'Nenhum alerta reconhecido neste dia.'}
+        </p>
+      )}
       {esc2.length > 0 && (
         <div className="mt-4">
           <h3 className="mb-2 font-disp text-lg">Escalonados ({esc2.length})</h3>

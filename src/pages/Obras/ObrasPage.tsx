@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sheet from '../../components/Sheet'
+import { AlertMsg, PageHead } from '../../components/ui'
 import type { ObraDto } from '../../app/models/entity/Cadastro.dto'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import { loadSession } from '../../app/services/premag/session'
@@ -47,36 +48,39 @@ export default function ObrasPage() {
   }
 
   return (
-    <div className="space-y-2">
-      {erro && <p className="text-sm text-red-700">{erro}</p>}
+    <div>
+      <PageHead
+        kicker="Produção"
+        titulo="Obras"
+        sub={obras.length ? `${obras.length} obra${obras.length === 1 ? '' : 's'} na planta` : 'Obras e frentes de serviço'}
+      />
+      <div className="space-y-2">
+      {erro && <AlertMsg>{erro}</AlertMsg>}
       {obras.map((o) => (
         <button
           key={o.id}
           type="button"
           onClick={() => navigate(`/obras/${o.id}`)}
-          className="w-full rounded border border-[#CFCCC5] bg-papel p-3 text-left"
+          className="card w-full p-3.5 text-left"
         >
           <div className="flex items-start justify-between gap-3">
-            <span className="font-disp text-[16px] leading-tight">{o.nome}</span>
-            <span className="font-disp text-xl">{Math.round(o.percentualAvanco)}%</span>
+            <span className="font-disp text-[16px] leading-tight tracking-wide">{o.nome}</span>
+            <span className="font-disp text-xl tabular-nums">{Math.round(o.percentualAvanco)}%</span>
           </div>
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-aco">
+          <p className="kicker mt-1">
             {o.cliente} · {o.quantidadeFrentes} frentes
           </p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded bg-[#E4E1DA]">
-            <div className="h-full bg-ambar" style={{ width: `${Math.min(100, o.percentualAvanco)}%` }} />
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[#E4E1DA]">
+            <div className="h-full rounded-full bg-ambar" style={{ width: `${Math.min(100, o.percentualAvanco)}%` }} />
           </div>
         </button>
       ))}
       {diretoria && (
-        <button
-          type="button"
-          onClick={() => setAbrir(true)}
-          className="w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
-        >
+        <button type="button" onClick={() => setAbrir(true)} className="btn-dashed">
           + Cadastrar obra
         </button>
       )}
+      </div>
       {abrir && (
         <Sheet titulo="Cadastrar obra" onClose={() => setAbrir(false)}>
           <form onSubmit={onCriar} className="space-y-3">
@@ -90,11 +94,7 @@ export default function ObrasPage() {
               onChange={(v) => setForm({ ...form, codigoSienge: v })}
             />
             <p className="text-xs text-aco">Depois de cadastrar a obra, as frentes são criadas pelo Gerente.</p>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
-            >
+            <button type="submit" disabled={enviando} className="btn-primary">
               {enviando ? 'Salvando…' : 'Cadastrar obra'}
             </button>
           </form>
@@ -117,9 +117,9 @@ function Campo({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">{label}</span>
+      <span className="label">{label}</span>
       <input
-        className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2 outline-none focus:border-ambar"
+        className="input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}

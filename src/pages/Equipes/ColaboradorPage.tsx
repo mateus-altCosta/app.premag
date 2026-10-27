@@ -172,10 +172,10 @@ export default function ColaboradorPage() {
   if (!turno || !colab) {
     return (
       <div>
-        <button type="button" onClick={() => navigate(`/equipes/${id}`)} className="mb-3 font-mono text-[10px] uppercase text-aco">
+        <button type="button" onClick={() => navigate(`/equipes/${id}`)} className="link-back">
           ← Voltar para a equipe
         </button>
-        {erro && <p className="text-sm text-red-700">{erro}</p>}
+        {erro && <p className="alert alert-erro">{erro}</p>}
         {!erro && <p className="text-sm text-aco">Carregando…</p>}
       </div>
     )
@@ -185,11 +185,11 @@ export default function ColaboradorPage() {
 
   return (
     <div className={aberto ? 'pb-16' : undefined}>
-      <button type="button" onClick={() => navigate(`/equipes/${id}`)} className="mb-3 font-mono text-[10px] uppercase tracking-wider text-aco">
+      <button type="button" onClick={() => navigate(`/equipes/${id}`)} className="link-back">
         ← Voltar para a equipe
       </button>
 
-      <div className="rounded border border-[#CFCCC5] bg-papel p-3">
+      <div className="card p-3.5">
         <div className="flex items-baseline justify-between gap-2">
           <span className="font-disp text-[18px]">{colab.nome}</span>
           <span className="font-mono text-[11px] text-aco">{colab.matricula}</span>
@@ -197,7 +197,7 @@ export default function ColaboradorPage() {
         {gerir && (
           <button
             type="button"
-            className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+            className="btn-link mt-2"
             onClick={() => {
               setNomeEd(colab.nome)
               setFuncaoEd(colab.funcao)
@@ -210,18 +210,18 @@ export default function ColaboradorPage() {
           </button>
         )}
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">{colab.funcao}</span>
+          <span className="badge">{colab.funcao}</span>
           {colab.custoHora != null && (
-            <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+            <span className="badge">
               {fmtCustoHora(colab.custoHora)}
             </span>
           )}
           {colab.codigoExterno && (
-            <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+            <span className="badge">
               {colab.codigoExterno}
             </span>
           )}
-          <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+          <span className="badge">
             {horas(colab.minutosTrabalhados)}h apontadas
           </span>
           {rotuloPonto(colab.jornadaEntrada, colab.jornadaSaida) && (
@@ -242,14 +242,14 @@ export default function ColaboradorPage() {
         </div>
       </div>
 
-      {erro && <p className="mt-3 text-sm text-red-700">{erro}</p>}
+      {erro && <p className="alert alert-erro mt-3">{erro}</p>}
       {aviso && (
-        <p className="mt-3 rounded border border-ambar/60 bg-ambar/10 p-2.5 text-xs leading-5 text-grafite">{aviso}</p>
+        <p className="alert alert-aviso mt-3 text-xs">{aviso}</p>
       )}
 
       {aberto ? (
-        <div className="mt-3 rounded border border-green-700/40 bg-papel p-3">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-green-800">Serviço em andamento</p>
+        <div className="card mt-3 border-ok/35 p-3.5 ring-1 ring-ok/15">
+          <p className="kicker text-ok">Serviço em andamento</p>
           {aberto.pendente && (
             <p className="mt-1 font-mono text-[10px] uppercase text-ambar">Na fila — envia quando a rede voltar</p>
           )}
@@ -270,13 +270,13 @@ export default function ColaboradorPage() {
           <button
             type="button"
             onClick={abrirEncerrar}
-            className="mt-3 h-14 w-full rounded bg-grafite font-disp text-lg text-papel"
+            className="btn-dark mt-3 h-14"
           >
-            ENCERRAR SERVIÇO
+            Encerrar serviço
           </button>
         </div>
       ) : (
-        <div className="mt-3 rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">
+        <div className="empty mt-3">
           Sem serviço em curso.
           {colab.minutosNaoApropriados > 10 && (
             <>
@@ -287,9 +287,9 @@ export default function ColaboradorPage() {
           <button
             type="button"
             onClick={abrirIniciar}
-            className="mt-3 h-14 w-full rounded bg-ambar font-disp text-lg text-grafite"
+            className="btn-primary mt-3 h-14"
           >
-            INICIAR SERVIÇO
+            Iniciar serviço
           </button>
         </div>
       )}
@@ -299,8 +299,8 @@ export default function ColaboradorPage() {
         <div className="space-y-2">
           {colab.apontamentos.length === 0 && <p className="text-sm text-aco">Nada apontado ainda.</p>}
           {colab.apontamentos.map((a) => (
-            <div key={a.id} className="flex overflow-hidden rounded border border-[#CFCCC5] bg-papel">
-              <span className="w-1.5 shrink-0" style={{ background: a.frenteCor }} />
+            <div key={a.id} className="card-row">
+              <span className="card-accent" style={{ background: a.frenteCor }} />
               <div className="flex-1 p-3">
                 <div className="flex justify-between gap-2">
                   <span className="font-disp text-[15px]">{a.frenteNome}</span>
@@ -323,7 +323,7 @@ export default function ColaboradorPage() {
                   <div className="mt-2 flex gap-2">
                     <button
                       type="button"
-                      className="font-mono text-[10px] uppercase text-ambar"
+                      className="btn-link"
                       onClick={() => {
                         setAjusteId(a.id)
                         setHoraIni(paraMinutos(a.horaInicio))
@@ -337,7 +337,7 @@ export default function ColaboradorPage() {
                     </button>
                     <button
                       type="button"
-                      className="font-mono text-[10px] uppercase text-red-800"
+                      className="font-mono text-[10px] uppercase text-alerta"
                       onClick={async () => {
                         const motivo = window.prompt('Motivo da anulação')
                         if (!motivo || motivo.trim().length < 3) return
@@ -374,7 +374,7 @@ export default function ColaboradorPage() {
         <button
           type="button"
           onClick={() => setFolha('foto')}
-          className="fixed bottom-20 left-1/2 z-30 w-[calc(100%-2rem)] max-w-[448px] -translate-x-1/2 rounded bg-grafite py-3 font-disp text-lg text-papel"
+          className="btn-dark sticky bottom-3 z-30 mt-4 shadow-lg"
         >
           REGISTRAR FOTO
         </button>
@@ -394,8 +394,8 @@ export default function ColaboradorPage() {
                       setObraId(o.id)
                       setFrenteId('')
                     }}
-                    className={`flex w-full items-center justify-between rounded border px-3 py-2 text-left ${
-                      obraId === o.id ? 'border-ambar' : 'border-[#CFCCC5]'
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left ${
+                      obraId === o.id ? 'border-grafite bg-concreto' : 'border-linha'
                     }`}
                   >
                     <span>
@@ -415,8 +415,8 @@ export default function ColaboradorPage() {
                       key={f.id}
                       type="button"
                       onClick={() => setFrenteId(f.id)}
-                      className={`flex w-full items-center gap-2 rounded border px-3 py-2 text-left ${
-                        frenteId === f.id ? 'border-ambar' : 'border-[#CFCCC5]'
+                      className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left ${
+                        frenteId === f.id ? 'border-grafite bg-concreto' : 'border-linha'
                       }`}
                     >
                       <span className="h-8 w-1 shrink-0 rounded" style={{ background: f.cor }} />
@@ -436,7 +436,7 @@ export default function ColaboradorPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="h-14 w-14 rounded border border-[#CFCCC5] font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
                   onClick={() => setHoraIni((h) => ajustar(h, -5, origemGap))}
                 >
                   −
@@ -447,7 +447,7 @@ export default function ColaboradorPage() {
                 </div>
                 <button
                   type="button"
-                  className="h-14 w-14 rounded border border-[#CFCCC5] font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
                   onClick={() => setHoraIni((h) => ajustar(h, 5, origemGap))}
                 >
                   +
@@ -455,7 +455,7 @@ export default function ColaboradorPage() {
               </div>
             </div>
             {gap > 10 && (
-              <div className="rounded border border-ambar/50 bg-ambar/10 p-3 text-sm">
+              <div className="alert alert-aviso text-sm">
                 <b>{gap} min sem apropriação</b> desde {formatarHora(origemGap)}. Informe o motivo — esse tempo entra
                 como parada.
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -464,9 +464,7 @@ export default function ColaboradorPage() {
                       key={m.id}
                       type="button"
                       onClick={() => setMotivoId(m.id)}
-                      className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                        motivoId === m.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                      }`}
+                      className={`chip ${motivoId === m.id ? 'chip-on' : ''}`}
                     >
                       {m.nome}
                     </button>
@@ -474,7 +472,7 @@ export default function ColaboradorPage() {
                 </div>
                 {(turno.motivosParada.find((m) => m.id === motivoId)?.exigeObservacao || !motivoId) && (
                   <input
-                    className="mt-2 w-full rounded border border-[#CFCCC5] px-3 py-2"
+                    className="input mt-2"
                     placeholder="Justificativa das horas"
                     value={obs}
                     onChange={(e) => setObs(e.target.value)}
@@ -485,7 +483,7 @@ export default function ColaboradorPage() {
             <button
               type="submit"
               disabled={!podeIniciar || enviando}
-              className="h-14 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-40"
+              className="btn-primary h-14"
             >
               {enviando ? 'Salvando…' : 'INICIAR'}
             </button>
@@ -496,7 +494,7 @@ export default function ColaboradorPage() {
       {folha === 'encerrar' && aberto && (
         <Sheet titulo="Encerrar serviço" onClose={() => setFolha(null)}>
           <form className="space-y-4">
-            <div className="rounded border border-[#CFCCC5] p-3">
+            <div className="card p-3.5">
               <p className="font-disp">{aberto.frenteNome}</p>
               <p className="font-mono text-[10px] uppercase text-aco">
                 {aberto.obraNome} · início {aberto.horaInicio}
@@ -507,7 +505,7 @@ export default function ColaboradorPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="h-14 w-14 rounded border border-[#CFCCC5] font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
                   onClick={() => setHoraFim((h) => ajustar(h, -5, paraMinutos(aberto.horaInicio) + 5))}
                 >
                   −
@@ -520,7 +518,7 @@ export default function ColaboradorPage() {
                 </div>
                 <button
                   type="button"
-                  className="h-14 w-14 rounded border border-[#CFCCC5] font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
                   onClick={() => setHoraFim((h) => ajustar(h, 5, paraMinutos(aberto.horaInicio) + 5))}
                 >
                   +
@@ -533,7 +531,7 @@ export default function ColaboradorPage() {
                   Quantidade concluída na frente ({aberto.unidade})
                 </p>
                 <input
-                  className="w-full rounded border border-[#CFCCC5] px-3 py-3"
+                  className="input"
                   inputMode="decimal"
                   value={qtd}
                   onChange={(e) => setQtd(e.target.value)}
@@ -549,7 +547,7 @@ export default function ColaboradorPage() {
               type="button"
               disabled={enviando}
               onClick={(e) => onEncerrar(e, false)}
-              className="h-14 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-40"
+              className="btn-primary h-14"
             >
               {enviando ? 'Salvando…' : 'ENCERRAR'}
             </button>
@@ -557,7 +555,7 @@ export default function ColaboradorPage() {
               type="button"
               disabled={enviando}
               onClick={(e) => onEncerrar(e, true)}
-              className="h-12 w-full rounded border border-[#CFCCC5] font-mono text-[11px] uppercase"
+              className="btn-ghost w-full py-3"
             >
               Encerrar e iniciar novo serviço
             </button>
@@ -598,8 +596,8 @@ export default function ColaboradorPage() {
                     key={f.id}
                     type="button"
                     onClick={() => setFrenteId(f.id)}
-                    className={`flex w-full items-center gap-2 rounded border px-3 py-2 text-left ${
-                      frenteId === f.id ? 'border-ambar' : 'border-[#CFCCC5]'
+                    className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left ${
+                      frenteId === f.id ? 'border-grafite bg-concreto' : 'border-linha'
                     }`}
                   >
                     <span className="h-8 w-1 shrink-0 rounded" style={{ background: f.cor }} />
@@ -611,11 +609,11 @@ export default function ColaboradorPage() {
             <div>
               <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">Início</p>
               <div className="flex items-center gap-3">
-                <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraIni((h) => h - 5)}>
+                <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraIni((h) => h - 5)}>
                   −
                 </button>
                 <div className="flex-1 text-center font-disp text-3xl">{formatarHora(horaIni)}</div>
-                <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraIni((h) => h + 5)}>
+                <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraIni((h) => h + 5)}>
                   +
                 </button>
               </div>
@@ -624,17 +622,17 @@ export default function ColaboradorPage() {
               <div>
                 <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">Término</p>
                 <div className="flex items-center gap-3">
-                  <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraFim((h) => h - 5)}>
+                  <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraFim((h) => h - 5)}>
                     −
                   </button>
                   <div className="flex-1 text-center font-disp text-3xl">{formatarHora(horaFim)}</div>
-                  <button type="button" className="h-12 w-12 rounded border border-[#CFCCC5] font-disp text-2xl" onClick={() => setHoraFim((h) => h + 5)}>
+                  <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraFim((h) => h + 5)}>
                     +
                   </button>
                 </div>
               </div>
             )}
-            <button type="submit" disabled={enviando} className="h-14 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-40">
+            <button type="submit" disabled={enviando} className="btn-primary h-14">
               {enviando ? 'Salvando…' : 'SALVAR'}
             </button>
           </form>
@@ -668,35 +666,35 @@ export default function ColaboradorPage() {
             }}
           >
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <span className="label">Nome</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={nomeEd}
                 onChange={(e) => setNomeEd(e.target.value)}
                 required
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Função</span>
+              <span className="label">Função</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={funcaoEd}
                 onChange={(e) => setFuncaoEd(e.target.value)}
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Código externo</span>
+              <span className="label">Código externo</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={codigoEd}
                 onChange={(e) => setCodigoEd(e.target.value)}
                 maxLength={40}
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Valor da hora (R$)</span>
+              <span className="label">Valor da hora (R$)</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={custoEd}
                 onChange={(e) => setCustoEd(e.target.value)}
                 inputMode="decimal"
@@ -706,7 +704,7 @@ export default function ColaboradorPage() {
             <button
               type="submit"
               disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+              className="btn-primary"
             >
               {enviando ? 'Salvando…' : 'Salvar'}
             </button>

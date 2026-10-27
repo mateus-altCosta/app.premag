@@ -49,24 +49,20 @@ export default function PendenciasPage() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="mb-3 font-mono text-[10px] uppercase tracking-wider text-aco"
-      >
+      <button type="button" onClick={() => navigate(-1)} className="link-back">
         ← Voltar
       </button>
-      <p className="mb-1 font-disp text-xl">Pendências</p>
-      <p className="mb-3 font-mono text-[10px] uppercase tracking-wider text-aco">
+      <p className="page-title">Pendências</p>
+      <p className="kicker mb-3">
         {online ? 'Rede disponível' : 'Sem rede — os lançamentos ficam neste aparelho'}
       </p>
-      {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
+      {erro && <p className="alert alert-erro mb-3">{erro}</p>}
       {itens.length === 0 ? (
-        <p className="text-sm text-aco">Nada na fila. O que você apontar sem internet aparece aqui.</p>
+        <p className="empty">Nada na fila. O que você apontar sem internet aparece aqui.</p>
       ) : (
         <div className="space-y-2">
           {itens.map((i) => (
-            <div key={i.id} className="rounded border border-[#CFCCC5] bg-papel p-3">
+            <div key={i.id} className="card p-3.5">
               <div className="flex justify-between gap-2">
                 <span className="font-disp text-[15px]">{rotulo(i.tipo)}</span>
                 <span className="font-mono text-[10px] uppercase text-aco">
@@ -82,7 +78,7 @@ export default function PendenciasPage() {
         type="button"
         disabled={!online || enviando || itens.length === 0}
         onClick={enviar}
-        className="mt-4 w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-40"
+        className="btn-primary mt-4"
       >
         {enviando ? 'Enviando…' : 'Enviar fila'}
       </button>

@@ -16,6 +16,8 @@ function rotuloAcao(acao: string) {
   if (acao === 'anular-apt') return 'Anulou apontamento'
   if (acao === 'excluir-foto') return 'Retirou foto do diário'
   if (acao === 'gerar-parada') return 'Lançou parada do alerta'
+  if (acao === 'inativar-equipe') return 'Encerrou equipe'
+  if (acao === 'redefinir-senha') return 'Redefiniu senha'
   return acao
 }
 
@@ -33,19 +35,15 @@ export default function HistoricoPage() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="mb-3 font-mono text-[10px] uppercase tracking-wider text-aco"
-      >
+      <button type="button" onClick={() => navigate(-1)} className="link-back">
         ← Voltar
       </button>
-      <p className="font-disp text-xl">Histórico</p>
-      <p className="mt-1 text-sm text-aco">Quem cadastrou, moveu de equipe, fechou ou reabriu o dia.</p>
-      {erro && <p className="mt-3 text-sm text-red-700">{erro}</p>}
+      <p className="page-title">Histórico</p>
+      <p className="page-sub">Quem cadastrou, moveu de equipe, fechou ou reabriu o dia.</p>
+      {erro && <p className="alert alert-erro mt-3">{erro}</p>}
       <div className="mt-3 space-y-2">
         {lista.map((a) => (
-          <div key={a.id} className="rounded border border-[#CFCCC5] bg-papel p-3">
+          <div key={a.id} className="card p-3.5">
             <div className="flex justify-between gap-2">
               <p className="font-disp text-[15px]">{rotuloAcao(a.acao)}</p>
               <span className="shrink-0 font-mono text-[10px] uppercase text-aco">

@@ -212,28 +212,28 @@ export default function ObraPage() {
       <button
         type="button"
         onClick={() => navigate('/obras')}
-        className="mb-3 font-mono text-[10px] uppercase tracking-wider text-aco"
+        className="link-back"
       >
         ← Voltar para obras
       </button>
       <div className="mb-3 flex items-start justify-between gap-2">
-        <p className="font-disp text-xl leading-tight">{obra?.nome ?? 'Obra'}</p>
+        <p className="page-title text-[1.45rem]">{obra?.nome ?? 'Obra'}</p>
         {diretoria && !obra?.interna && (
           <button
             type="button"
-            className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-ambar"
+            className="btn-link shrink-0"
             onClick={() => setEditarObra(true)}
           >
             Alterar obra
           </button>
         )}
       </div>
-      {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
+      {erro && <p className="alert alert-erro mb-3">{erro}</p>}
       <div className="space-y-2">
         {frentes.map((f) => (
-          <div key={f.id} className="flex overflow-hidden rounded border border-[#CFCCC5] bg-papel">
-            <span className="w-1.5 shrink-0" style={{ background: f.cor }} />
-            <div className="flex-1 p-3">
+          <div key={f.id} className="card-row">
+            <span className="card-accent" style={{ background: f.cor }} />
+            <div className="flex-1 p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <span className="font-disp text-[15px] leading-tight">{f.nome}</span>
                 <span className="font-disp text-lg">{Math.round(f.percentualAvanco)}%</span>
@@ -241,37 +241,37 @@ export default function ObraPage() {
               <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-aco">
                 {fmt(f.quantidadeConcluida)} de {fmt(f.quantidadePrevista)} {f.unidade} · equipe {f.equipeNome ?? '—'}
               </p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded bg-[#E4E1DA]">
-                <div className="h-full bg-ambar" style={{ width: `${Math.min(100, f.percentualAvanco)}%` }} />
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E4E1DA]">
+                <div className="h-full rounded-full bg-ambar" style={{ width: `${Math.min(100, f.percentualAvanco)}%` }} />
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {f.hhPorUnidade != null ? (
-                  <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                  <span className="badge">
                     {fmt2(f.hhPorUnidade)} HH/{f.unidade} real
                   </span>
                 ) : f.hhTotal ? (
-                  <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                  <span className="badge">
                     {fmt2(f.hhTotal)} HH
                   </span>
                 ) : null}
                 {f.hhOrcadoPorUnidade != null && (
-                  <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                  <span className="badge">
                     cotado {fmt2(f.hhOrcadoPorUnidade)} HH/{f.unidade}
                   </span>
                 )}
                 {f.taxaAcoKgPorUnidade ? (
                   f.acoEstimadoKg ? (
-                    <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                    <span className="badge">
                       aço est. {fmt(f.acoEstimadoKg)} {f.taxaAcoUnidade || 'kg'}
                     </span>
                   ) : (
-                    <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                    <span className="badge">
                       {fmt(f.taxaAcoKgPorUnidade)} {f.taxaAcoUnidade || 'kg'} aço/{f.unidade}
                     </span>
                   )
                 ) : null}
                 {f.custoPorUnidade != null && (
-                  <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                  <span className="badge">
                     {fmtMoeda(f.custoPorUnidade)}/{f.unidade}
                   </span>
                 )}
@@ -284,18 +284,18 @@ export default function ObraPage() {
                   </span>
                 )}
                 {f.amostraInsuficiente && (
-                  <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                  <span className="badge">
                     amostra insuficiente
                   </span>
                 )}
-                <span className="rounded border border-[#CFCCC5] px-2 py-0.5 font-mono text-[10px] uppercase text-aco">
+                <span className="badge">
                   {f.etapaNome}
                 </span>
               </div>
               {gerir && (
                 <button
                   type="button"
-                  className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+                  className="btn-link mt-2"
                   onClick={() => abrirEdicaoFrente(f)}
                 >
                   Alterar frente
@@ -321,7 +321,7 @@ export default function ObraPage() {
             setForm((f) => ({ ...f, nome: '', prevista: '', aco: '', unidadeAco: 'kg', hhOrc: '', equipeId: '' }))
             setAbrir(true)
           }}
-          className="mt-3 w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
+          className="btn-dashed mt-3"
         >
           + Cadastrar frente
         </button>
@@ -335,7 +335,7 @@ export default function ObraPage() {
         <button
           type="button"
           onClick={() => setFoto(true)}
-          className="fixed bottom-20 left-1/2 z-30 w-[calc(100%-2rem)] max-w-[448px] -translate-x-1/2 rounded bg-grafite py-3 font-disp text-lg text-papel"
+          className="btn-dark sticky bottom-3 z-30 mt-4 shadow-lg"
         >
           REGISTRAR FOTO
         </button>
@@ -345,43 +345,43 @@ export default function ObraPage() {
         <Sheet titulo="Alterar obra" onClose={() => setEditarObra(false)}>
           <form onSubmit={onSalvarObra} className="space-y-3">
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <span className="label">Nome</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={obraForm.nome}
                 onChange={(e) => setObraForm({ ...obraForm, nome: e.target.value })}
                 required
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Cliente</span>
+              <span className="label">Cliente</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={obraForm.cliente}
                 onChange={(e) => setObraForm({ ...obraForm, cliente: e.target.value })}
                 required
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Tipo</span>
+              <span className="label">Tipo</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={obraForm.tipo}
                 onChange={(e) => setObraForm({ ...obraForm, tipo: e.target.value })}
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Local</span>
+              <span className="label">Local</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={obraForm.local}
                 onChange={(e) => setObraForm({ ...obraForm, local: e.target.value })}
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Situação</span>
+              <span className="label">Situação</span>
               <select
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={obraForm.status}
                 onChange={(e) => setObraForm({ ...obraForm, status: Number(e.target.value) })}
               >
@@ -394,7 +394,7 @@ export default function ObraPage() {
             <button
               type="submit"
               disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+              className="btn-primary"
             >
               {enviando ? 'Salvando…' : 'Salvar obra'}
             </button>
@@ -405,11 +405,11 @@ export default function ObraPage() {
       {editarFrente && catalogo && (
         <Sheet titulo="Alterar frente" onClose={() => setEditarFrente(null)}>
           <form onSubmit={onSalvarFrente} className="space-y-3">
-            {erro && <p className="text-sm text-red-700">{erro}</p>}
+            {erro && <p className="alert alert-erro">{erro}</p>}
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <span className="label">Nome</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 required
@@ -423,8 +423,8 @@ export default function ObraPage() {
                     key={u}
                     type="button"
                     onClick={() => setForm({ ...form, unidade: u })}
-                    className={`rounded border px-3 py-1.5 font-mono text-[11px] ${
-                      form.unidade === u ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                    className={`chip ${
+                      form.unidade === u ? 'chip-on' : ''
                     }`}
                   >
                     {u}
@@ -433,20 +433,20 @@ export default function ObraPage() {
               </div>
             </div>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Quantidade prevista</span>
+              <span className="label">Quantidade prevista</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={form.prevista}
                 onChange={(e) => setForm({ ...form, prevista: e.target.value })}
                 inputMode="decimal"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">
+              <span className="label">
                 HH cotado por unidade
               </span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={form.hhOrc}
                 onChange={(e) => setForm({ ...form, hhOrc: e.target.value })}
                 inputMode="decimal"
@@ -466,8 +466,8 @@ export default function ObraPage() {
                     key={eq.id}
                     type="button"
                     onClick={() => setForm({ ...form, equipeId: form.equipeId === eq.id ? '' : eq.id })}
-                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                      form.equipeId === eq.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                    className={`chip ${
+                      form.equipeId === eq.id ? 'chip-on' : ''
                     }`}
                   >
                     {eq.nome}
@@ -478,7 +478,7 @@ export default function ObraPage() {
             <button
               type="submit"
               disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+              className="btn-primary"
             >
               {enviando ? 'Salvando…' : 'Salvar frente'}
             </button>
@@ -486,7 +486,7 @@ export default function ObraPage() {
               type="button"
               disabled={enviando}
               onClick={() => void onEncerrarFrente()}
-              className="w-full rounded border border-red-800 py-3 font-mono text-[11px] uppercase tracking-wider text-red-800 disabled:opacity-50"
+              className="w-full rounded-xl border border-alerta py-3 font-mono text-[11px] uppercase tracking-wider text-alerta disabled:opacity-50"
             >
               Encerrar frente
             </button>
@@ -497,11 +497,11 @@ export default function ObraPage() {
       {abrir && catalogo && (
         <Sheet titulo="Cadastrar frente" onClose={() => setAbrir(false)}>
           <form onSubmit={onCriar} className="space-y-3">
-            {erro && <p className="text-sm text-red-700">{erro}</p>}
+            {erro && <p className="alert alert-erro">{erro}</p>}
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <span className="label">Nome</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2 outline-none focus:border-ambar"
+                className="input outline-none focus:border-ambar"
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 required
@@ -515,8 +515,8 @@ export default function ObraPage() {
                     key={u}
                     type="button"
                     onClick={() => setForm({ ...form, unidade: u })}
-                    className={`rounded border px-3 py-1.5 font-mono text-[11px] ${
-                      form.unidade === u ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                    className={`chip ${
+                      form.unidade === u ? 'chip-on' : ''
                     }`}
                   >
                     {u}
@@ -525,20 +525,20 @@ export default function ObraPage() {
               </div>
             </div>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Quantidade prevista</span>
+              <span className="label">Quantidade prevista</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={form.prevista}
                 onChange={(e) => setForm({ ...form, prevista: e.target.value })}
                 inputMode="decimal"
               />
             </label>
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">
+              <span className="label">
                 HH cotado por unidade
               </span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={form.hhOrc}
                 onChange={(e) => setForm({ ...form, hhOrc: e.target.value })}
                 inputMode="decimal"
@@ -558,8 +558,8 @@ export default function ObraPage() {
                     key={eq.id}
                     type="button"
                     onClick={() => setForm({ ...form, equipeId: form.equipeId === eq.id ? '' : eq.id })}
-                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                      form.equipeId === eq.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+                    className={`chip ${
+                      form.equipeId === eq.id ? 'chip-on' : ''
                     }`}
                   >
                     {eq.nome}
@@ -570,7 +570,7 @@ export default function ObraPage() {
             <button
               type="submit"
               disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+              className="btn-primary"
             >
               {enviando ? 'Salvando…' : 'Cadastrar frente'}
             </button>
@@ -616,8 +616,8 @@ function CampoAco({
               key={u}
               type="button"
               onClick={() => onUnidade(u)}
-              className={`rounded border px-3 py-1.5 font-mono text-[11px] ${
-                unidadeAco === u ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
+              className={`chip ${
+                unidadeAco === u ? 'chip-on' : ''
               }`}
             >
               {u}
@@ -626,11 +626,11 @@ function CampoAco({
         </div>
       </div>
       <label className="block">
-        <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">
+        <span className="label">
           {unidadeAco}
         </span>
         <input
-          className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+          className="input"
           value={valor}
           onChange={(e) => onValor(e.target.value)}
           inputMode="decimal"

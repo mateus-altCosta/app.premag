@@ -1,30 +1,33 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { authService, type UsuarioAtual } from '../app/services/premag/authService.service'
 import { loadSession } from '../app/services/premag/session'
 import { ehEncarregado, ehDiretoria, podeGerir } from '../app/services/premag/perfil'
 import { contarFila, sincronizarFila } from '../app/services/premag/sync.service'
 import { estaOnline, onFila, onRede, verificarAlcance } from '../app/services/premag/rede'
 import { operacaoService } from '../app/services/premag/operacao.service'
-
 import { ativarPush } from '../app/services/premag/push'
+import { Marca } from './ui'
 
 type AbaIcone = 'equipe' | 'obras' | 'diario' | 'alertas' | 'relatorios' | 'dia'
 
-function itemClass(ativo: boolean) {
-  return `flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[9px] uppercase tracking-wider ${
-    ativo ? 'text-ambar' : 'text-[#7d858c]'
-  }`
+function iniciais(nome: string) {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  if (!partes.length) return 'P'
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
 }
 
 function IconeAba({ tipo }: { tipo: AbaIcone }) {
   const props = {
-    width: 19,
-    height: 19,
+    width: 20,
+    height: 20,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
-    strokeWidth: 2,
+    strokeWidth: 1.8,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
     'aria-hidden': true as const,
   }
   if (tipo === 'equipe') {
@@ -77,11 +80,14 @@ function IconeAba({ tipo }: { tipo: AbaIcone }) {
 
 export default function AppShell() {
   const navigate = useNavigate()
+  const location = useLocation()
   const session = loadSession()
   const [me, setMe] = useState<UsuarioAtual | null>(null)
   const [online, setOnline] = useState(estaOnline())
   const [fila, setFila] = useState(0)
   const [alertas, setAlertas] = useState(0)
+  const [menu, setMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const [instalarEv, setInstalarEv] = useState<{ prompt: () => Promise<void> } | null>(null)
   const [esconderInstalar, setEsconderInstalar] = useState(
     () => sessionStorage.getItem('premag-instalar') === '1' || window.matchMedia('(display-mode: standalone)').matches,
@@ -91,6 +97,7 @@ export default function AppShell() {
   const gerir = podeGerir(perfil)
   const diretoria = ehDiretoria(perfil)
   const equipeHome = me?.equipeId ?? session?.equipeId
+  const nome = me?.nome ?? session?.nome ?? '…'
 
   useEffect(() => {
     authService.me().then(setMe).catch(() => undefined)
@@ -118,153 +125,216 @@ export default function AppShell() {
     }
   }, [])
 
+  useEffect(() => {
+    setMenu(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    function fora(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(false)
+    }
+    document.addEventListener('mousedown', fora)
+    return () => document.removeEventListener('mousedown', fora)
+  }, [])
+
   async function sair() {
     await authService.logout()
     navigate('/login', { replace: true })
   }
 
-  const abas: { to: string; label: string; icone: AbaIcone }[] = encarregado
+  const abas: { to: string; label: string; icone: AbaIcone; match?: (p: string) => boolean }[] = encarregado
     ? [
-        { to: equipeHome ? `/equipes/${equipeHome}` : '/equipes', label: 'Equipe', icone: 'equipe' },
+        {
+          to: equipeHome ? `/equipes/${equipeHome}` : '/equipes',
+          label: 'Equipe',
+          icone: 'equipe',
+          match: (p) => p.startsWith('/equipes'),
+        },
         { to: '/diario', label: 'Diário', icone: 'diario' },
         { to: '/fechamento', label: 'Dia', icone: 'dia' },
         { to: '/alertas', label: 'Alertas', icone: 'alertas' },
       ]
     : diretoria
       ? [
-          { to: '/equipes', label: 'Equipes', icone: 'equipe' },
-          { to: '/obras', label: 'Obras', icone: 'obras' },
+          { to: '/equipes', label: 'Equipes', icone: 'equipe', match: (p) => p.startsWith('/equipes') },
+          { to: '/obras', label: 'Obras', icone: 'obras', match: (p) => p.startsWith('/obras') },
           { to: '/diario', label: 'Diário', icone: 'diario' },
           { to: '/relatorios', label: 'Relatórios', icone: 'relatorios' },
           { to: '/fechamento', label: 'Dia', icone: 'dia' },
         ]
       : gerir
         ? [
-            { to: '/equipes', label: 'Equipes', icone: 'equipe' },
-            { to: '/obras', label: 'Obras', icone: 'obras' },
+            { to: '/equipes', label: 'Equipes', icone: 'equipe', match: (p) => p.startsWith('/equipes') },
+            { to: '/obras', label: 'Obras', icone: 'obras', match: (p) => p.startsWith('/obras') },
             { to: '/diario', label: 'Diário', icone: 'diario' },
+            { to: '/relatorios', label: 'Relatórios', icone: 'relatorios' },
             { to: '/fechamento', label: 'Dia', icone: 'dia' },
           ]
         : [
-            { to: '/equipes', label: 'Equipes', icone: 'equipe' },
-            { to: '/obras', label: 'Obras', icone: 'obras' },
+            { to: '/equipes', label: 'Equipes', icone: 'equipe', match: (p) => p.startsWith('/equipes') },
+            { to: '/obras', label: 'Obras', icone: 'obras', match: (p) => p.startsWith('/obras') },
           ]
 
+  const path = location.pathname
+  const abaAtiva = useMemo(
+    () => abas.find((a) => (a.match ? a.match(path) : path === a.to || path.startsWith(`${a.to}/`))),
+    [abas, path],
+  )
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-[480px] flex-col bg-concreto">
-      <header className="bg-grafite px-5 pb-3 pt-4 text-papel">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ambar">
-              PREMAG · {perfil ?? '…'}
-            </p>
-            <h1 className="mt-1 font-disp text-2xl leading-tight">{me?.nome ?? session?.nome ?? '…'}</h1>
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
-            <div className="flex items-center gap-2">
+    <div className="app-frame">
+      <div className="app-shell">
+        <header className="z-40 shrink-0 border-b border-white/5 bg-grafite px-4 pb-3 pt-[max(0.85rem,env(safe-area-inset-top))] text-papel">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Marca className="h-8 w-8 text-base" />
+              <div className="min-w-0">
+                <p className="truncate font-disp text-[17px] leading-none tracking-wide">
+                  {nome}
+                </p>
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ambar/90">
+                  PREMAG · {perfil ?? '…'}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => navigate('/alertas')}
-                className="relative border border-[#3d4348] px-2 py-2 text-aco"
+                className="icon-btn"
                 aria-label="Alertas"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
                   <path d="M10 20h4" />
                 </svg>
                 {alertas > 0 && (
-                  <i
-                    className="absolute right-1 top-1 h-2 w-2 rounded-full"
-                    style={{ background: alertas > 0 ? '#C0392B' : 'var(--ambar)' }}
-                  />
+                  <i className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-alerta" />
                 )}
               </button>
               <span
-                className={`rounded border px-2 py-1 font-mono text-[10px] uppercase tracking-wider ${
-                  online ? 'border-[#3d4348] text-[#8b939a]' : 'border-ambar text-ambar'
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-2 py-1.5 font-mono text-[10px] uppercase tracking-wider ${
+                  online ? 'border-white/10 text-papel/55' : 'border-ambar/50 text-ambar'
                 }`}
               >
-                {online ? 'ON' : 'OFF'}
+                <i
+                  className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-emerald-400' : 'animate-pulse bg-ambar'}`}
+                />
+                {online ? 'On' : 'Off'}
               </span>
-              <button
-                type="button"
-                onClick={() => navigate('/conta')}
-                className="border border-[#3d4348] px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-aco"
-              >
-                Conta
-              </button>
-              <button
-                type="button"
-                onClick={sair}
-                className="border border-[#3d4348] px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-aco"
-              >
-                Sair
-              </button>
-            </div>
-            {fila > 0 && (
-              <button
-                type="button"
-                onClick={() => navigate('/pendencias')}
-                className="font-mono text-[10px] uppercase tracking-wider text-ambar"
-              >
-                {fila} na fila
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-      <main className="flex-1 px-4 pb-24 pt-4">
-        {!esconderInstalar && (
-          <div className="mb-3 rounded border border-ambar/50 bg-ambar/10 p-3">
-            <p className="text-sm text-grafite">
-              {instalarEv
-                ? 'Instale o PREMAG na tela inicial para usar como aplicativo.'
-                : 'No celular: menu do navegador → Adicionar à tela inicial.'}
-            </p>
-            <div className="mt-2 flex gap-3">
-              {instalarEv && (
+              <div className="relative" ref={menuRef}>
                 <button
                   type="button"
-                  className="font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
-                  onClick={async () => {
-                    await instalarEv.prompt()
-                    setInstalarEv(null)
+                  onClick={() => setMenu((v) => !v)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-ambar font-disp text-[13px] text-grafite"
+                  aria-label="Menu da conta"
+                  aria-expanded={menu}
+                >
+                  {iniciais(nome === '…' ? 'P' : nome)}
+                </button>
+                {menu && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-44 overflow-hidden rounded-xl border border-linha bg-papel py-1 text-grafite shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/conta')}
+                      className="flex w-full px-3 py-2.5 text-left text-sm hover:bg-concreto"
+                    >
+                      Conta
+                    </button>
+                    {fila > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => navigate('/pendencias')}
+                        className="flex w-full px-3 py-2.5 text-left text-sm text-[#9a6200] hover:bg-concreto"
+                      >
+                        {fila} na fila
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={sair}
+                      className="flex w-full px-3 py-2.5 text-left text-sm text-alerta hover:bg-concreto"
+                    >
+                      Sair
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          {fila > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate('/pendencias')}
+              className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+            >
+              {fila} lançamento{fila > 1 ? 's' : ''} na fila — tocar para enviar
+            </button>
+          )}
+        </header>
+
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-3 pt-4">
+          {!esconderInstalar && (
+            <div className="mb-3 rounded-xl border border-ambar/40 bg-ambar/10 p-3">
+              <p className="text-sm text-grafite">
+                {instalarEv
+                  ? 'Instale o PREMAG na tela inicial para usar como aplicativo.'
+                  : 'No celular: menu do navegador → Adicionar à tela inicial.'}
+              </p>
+              <div className="mt-2 flex gap-3">
+                {instalarEv && (
+                  <button
+                    type="button"
+                    className="btn-link"
+                    onClick={async () => {
+                      await instalarEv.prompt()
+                      setInstalarEv(null)
+                      sessionStorage.setItem('premag-instalar', '1')
+                      setEsconderInstalar(true)
+                    }}
+                  >
+                    Instalar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="font-mono text-[10px] uppercase tracking-wider text-aco"
+                  onClick={() => {
                     sessionStorage.setItem('premag-instalar', '1')
                     setEsconderInstalar(true)
                   }}
                 >
-                  Instalar
+                  Agora não
                 </button>
-              )}
-              <button
-                type="button"
-                className="font-mono text-[10px] uppercase tracking-wider text-aco"
-                onClick={() => {
-                  sessionStorage.setItem('premag-instalar', '1')
-                  setEsconderInstalar(true)
-                }}
-              >
-                Agora não
-              </button>
+              </div>
             </div>
+          )}
+          <div key={location.pathname} className="rise-in pb-4">
+            <Outlet />
           </div>
-        )}
-        <Outlet />
-      </main>
-      <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t-2 border-ambar bg-grafite pb-[env(safe-area-inset-bottom)]">
-        <div className="flex">
-          {abas.map((aba) => (
-            <NavLink
-              key={aba.to + aba.label}
-              to={aba.to}
-              className={({ isActive }) => itemClass(isActive)}
-            >
-              <IconeAba tipo={aba.icone} />
-              <span>{aba.label}</span>
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+        </main>
+
+        <nav className="z-40 shrink-0 border-t border-white/5 bg-grafite pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1">
+          <div className="flex">
+            {abas.map((aba) => {
+              const ativa = abaAtiva?.label === aba.label
+              return (
+                <NavLink
+                  key={aba.to + aba.label}
+                  to={aba.to}
+                  className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[9px] uppercase tracking-[0.12em] transition ${
+                    ativa ? 'text-ambar' : 'text-[#8b939a]'
+                  }`}
+                >
+                  {ativa && <span className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-ambar" />}
+                  <IconeAba tipo={aba.icone} />
+                  <span>{aba.label}</span>
+                </NavLink>
+              )
+            })}
+          </div>
+        </nav>
+      </div>
     </div>
   )
 }

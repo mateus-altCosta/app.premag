@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sheet from '../../components/Sheet'
+import { AlertMsg, Chip, EmptyState, PageHead } from '../../components/ui'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import type { EquipeDto, UsuarioResumoDto } from '../../app/models/entity/Cadastro.dto'
 import { ehEncarregado, podeGerir } from '../../app/services/premag/perfil'
@@ -46,20 +47,26 @@ export default function EquipesPage() {
   }, [navigate, session?.equipeId, session?.perfil])
 
   return (
-    <div className="space-y-2">
-      {erro && <p className="text-sm text-red-700">{erro}</p>}
+    <div>
+      <PageHead
+        kicker="Planta"
+        titulo="Equipes"
+        sub={equipes.length ? `${equipes.length} equipe${equipes.length === 1 ? '' : 's'} ativas` : 'Cadastro de equipes da planta'}
+      />
+      <div className="space-y-2">
+      {erro && <AlertMsg>{erro}</AlertMsg>}
       {equipes.map((e) => (
         <button
           key={e.id}
           type="button"
           onClick={() => navigate(`/equipes/${e.id}`)}
-          className="flex w-full items-stretch overflow-hidden rounded border border-[#CFCCC5] bg-papel text-left"
+          className="card-row"
         >
-          <span className="w-1.5 shrink-0" style={{ background: e.cor }} />
-          <span className="flex flex-1 items-center justify-between gap-3 px-3 py-3">
+          <span className="card-accent" style={{ background: e.cor }} />
+          <span className="flex flex-1 items-center justify-between gap-3 px-3.5 py-3.5">
             <span>
-              <span className="block font-disp text-[17px]">{e.nome}</span>
-              <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-wider text-aco">
+              <span className="block font-disp text-[17px] tracking-wide">{e.nome}</span>
+              <span className="kicker mt-1 block">
                 {e.presentes} na equipe
                 {e.encarregadoNome ? ` · ${e.encarregadoNome}` : ''}
               </span>
@@ -69,9 +76,7 @@ export default function EquipesPage() {
         </button>
       ))}
       {!erro && equipes.length === 0 && (
-        <p className="rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">
-          Nenhuma equipe cadastrada ainda.
-        </p>
+        <EmptyState>Nenhuma equipe cadastrada ainda.</EmptyState>
       )}
       {gerir && (
         <button
@@ -82,11 +87,12 @@ export default function EquipesPage() {
             setEncarregadoId('')
             setAbrir(true)
           }}
-          className="w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
+          className="btn-dashed"
         >
           + Cadastrar equipe
         </button>
       )}
+      </div>
       {abrir && (
         <Sheet titulo="Cadastrar equipe" onClose={() => setAbrir(false)}>
           <form
@@ -111,9 +117,9 @@ export default function EquipesPage() {
             }}
           >
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Nome</span>
+              <span className="label">Nome</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2"
+                className="input"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 required
@@ -121,65 +127,48 @@ export default function EquipesPage() {
               />
             </label>
             <div>
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Encarregado</p>
+              <p className="label">Encarregado</p>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEncarregadoId('')}
-                  className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                    !encarregadoId ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                  }`}
-                >
+                <Chip ativo={!encarregadoId} onClick={() => setEncarregadoId('')}>
                   Nenhum
-                </button>
+                </Chip>
                 {encarregados.map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => setEncarregadoId(u.id)}
-                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                      encarregadoId === u.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                    }`}
-                  >
+                  <Chip key={u.id} ativo={encarregadoId === u.id} onClick={() => setEncarregadoId(u.id)}>
                     {u.nome}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </div>
             <div>
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Cor</p>
+              <p className="label">Cor</p>
               <div className="flex flex-wrap gap-2">
                 {CORES_EQUIPE.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setCor(c)}
-                    className={`h-9 w-9 rounded border ${cor === c ? 'border-ambar ring-2 ring-ambar' : 'border-[#CFCCC5]'}`}
+                    className={`h-9 w-9 rounded-lg border ${cor === c ? 'border-grafite ring-2 ring-ambar' : 'border-linha'}`}
                     style={{ background: c }}
                     aria-label={c}
                   />
                 ))}
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
-            >
+            <button type="submit" disabled={enviando} className="btn-primary">
               {enviando ? 'Salvando…' : 'Cadastrar equipe'}
             </button>
           </form>
         </Sheet>
       )}
       {gerir && (
-        <div className="mt-4 rounded border border-[#CFCCC5] bg-papel p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Importar folha</p>
-          <p className="mt-1 text-xs text-aco">
+        <div className="mt-4 card-pad">
+          <p className="kicker">Importar folha</p>
+          <p className="mt-1 break-words text-xs text-aco">
             AFD (REP, registros tipo 3/4) atualiza jornada do dia. CSV:{' '}
             <code>matricula;nome;funcao;equipeNome;custoHora;codigoExterno</code>
           </p>
           <label className="mt-3 block">
-            <span className="mb-1 block font-mono text-[10px] uppercase text-aco">Arquivo AFD</span>
+            <span className="label">Arquivo AFD</span>
             <input
               type="file"
               className="w-full text-sm"
@@ -197,7 +186,7 @@ export default function EquipesPage() {
             />
           </label>
           <label className="mt-3 block">
-            <span className="mb-1 block font-mono text-[10px] uppercase text-aco">Colaboradores (CSV)</span>
+            <span className="label">Colaboradores (CSV)</span>
             <input
               type="file"
               accept=".csv,text/csv,text/plain"

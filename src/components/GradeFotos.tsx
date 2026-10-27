@@ -70,7 +70,7 @@ function Thumb({ foto, onAbrir }: { foto: FotoDto; onAbrir: () => void }) {
     <button
       type="button"
       onClick={() => src && onAbrir()}
-      className="overflow-hidden rounded border border-[#CFCCC5] bg-[#E4E1DA] text-left"
+      className="overflow-hidden rounded-xl border border-linha bg-[#E4E1DA] text-left shadow-sm"
       aria-label="Ampliar foto"
     >
       {src ? (

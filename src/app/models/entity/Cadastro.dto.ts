@@ -92,6 +92,15 @@ export interface UsuarioResumoDto {
   equipeId?: string | null
 }
 
+export interface UsuarioListaDto {
+  id: string
+  userName: string
+  nome: string
+  perfil: string
+  equipeId?: string | null
+  equipeNome?: string | null
+}
+
 export interface CatalogoDto {
   etapas: EtapaDto[]
   motivosParada: MotivoParadaDto[]

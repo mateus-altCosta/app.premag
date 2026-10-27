@@ -7,6 +7,7 @@ import { operacaoService } from '../../app/services/premag/operacao.service'
 import { loadSession } from '../../app/services/premag/session'
 import { ehEncarregado, podeGerir } from '../../app/services/premag/perfil'
 import GradeFotos from '../../components/GradeFotos'
+import { AlertMsg, EmptyState, PageHead } from '../../components/ui'
 
 function hojeIso() {
   const n = new Date()
@@ -73,17 +74,18 @@ export default function DiarioPage() {
 
   return (
     <div>
-      {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
-      <div className="rounded border border-[#CFCCC5] bg-papel p-4">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-aco">
-          Diário · {diario?.escopo ?? '…'}
+      <PageHead kicker="Operação" titulo="Diário" sub={diario?.escopo ?? 'Registro do dia'} />
+      {erro && <AlertMsg>{erro}</AlertMsg>}
+      <div className="card-pad">
+        <p className="kicker">
+          {diario?.escopo ?? '…'}
         </p>
-        <p className="mt-1 font-disp text-2xl">{diario ? fmtData(diario.data) : '…'}</p>
+        <p className="mt-1 font-disp text-2xl tracking-wide">{diario ? fmtData(diario.data) : '…'}</p>
         <label className="mt-3 block">
-          <span className="font-mono text-[10px] uppercase text-aco">Dia</span>
+          <span className="label">Dia</span>
           <input
             type="date"
-            className="mt-1 w-full rounded border border-[#CFCCC5] bg-white px-2 py-2 text-sm"
+            className="input"
             value={data}
             max={hoje}
             onChange={(e) => escolherData(e.target.value)}
@@ -91,9 +93,9 @@ export default function DiarioPage() {
         </label>
         {gerir && (
           <label className="mt-3 block">
-            <span className="font-mono text-[10px] uppercase text-aco">Equipe</span>
+            <span className="label">Equipe</span>
             <select
-              className="mt-1 w-full rounded border border-[#CFCCC5] bg-white px-2 py-2 text-sm"
+              className="input"
               value={equipeFiltro}
               onChange={(e) => escolherEquipe(e.target.value)}
             >
@@ -109,19 +111,19 @@ export default function DiarioPage() {
       </div>
 
       <div className="mt-4">
-        <h3 className="mb-2 font-disp text-lg">Serviços do dia</h3>
+        <h3 className="mb-2 font-disp text-lg tracking-wide">Serviços do dia</h3>
         <div className="space-y-2">
           {(diario?.frentes ?? []).map((f) => (
-            <div key={f.frenteId} className="flex overflow-hidden rounded border border-[#CFCCC5] bg-papel">
-              <span className="w-1.5 shrink-0" style={{ background: f.cor }} />
-              <div className="flex-1 p-3">
-                <p className="font-disp text-[15px]">{f.nome}</p>
-                <p className="mt-1 font-mono text-[10px] uppercase text-aco">
+            <div key={f.frenteId} className="card-row">
+              <span className="card-accent" style={{ background: f.cor }} />
+              <div className="flex-1 p-3.5">
+                <p className="font-disp text-[15px] tracking-wide">{f.nome}</p>
+                <p className="kicker mt-1">
                   {f.obraNome} · {f.horas.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}h · {f.pessoas} pessoas
                   {f.quantidade > 0 ? ` · ${f.quantidade} ${f.unidade}` : ''}
                 </p>
                 {f.semQuantidade && (
-                  <span className="mt-2 inline-block rounded border border-ambar/40 px-2 py-0.5 font-mono text-[10px] uppercase text-ambar">
+                  <span className="badge mt-2 border-ambar/40 text-ambar">
                     sem quantidade
                   </span>
                 )}
@@ -129,14 +131,14 @@ export default function DiarioPage() {
             </div>
           ))}
           {diario && diario.frentes.length === 0 && (
-            <p className="text-sm text-aco">Nenhum serviço apontado neste dia.</p>
+            <EmptyState>Nenhum serviço apontado neste dia.</EmptyState>
           )}
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <div className="rounded border border-[#CFCCC5] bg-papel p-3">
-          <p className="font-mono text-[10px] uppercase text-aco">Equipe</p>
+        <div className="card p-3.5">
+          <p className="kicker">Equipe</p>
           {(diario?.funcoes ?? []).map((f) => (
             <div key={f.funcao} className="mt-1.5 flex justify-between text-sm">
               <span>{f.funcao}</span>
@@ -144,8 +146,8 @@ export default function DiarioPage() {
             </div>
           ))}
         </div>
-        <div className="rounded border border-[#CFCCC5] bg-papel p-3">
-          <p className="font-mono text-[10px] uppercase text-aco">Observações</p>
+        <div className="card p-3.5">
+          <p className="kicker">Observações</p>
           {(diario?.situacoes ?? []).length === 0 ? (
             <p className="mt-1.5 text-xs text-aco">Sem faltas ou afastamentos.</p>
           ) : (
@@ -161,9 +163,9 @@ export default function DiarioPage() {
       </div>
 
       <div className="mt-4">
-        <h3 className="mb-2 font-disp text-lg">Registro fotográfico</h3>
+        <h3 className="mb-2 font-disp text-lg tracking-wide">Registro fotográfico</h3>
         {diario && diario.fotos.length === 0 ? (
-          <p className="rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">
+          <p className="empty">
             Nenhuma foto anexada {data === hoje ? 'hoje' : 'neste dia'}. Fotos de avanço entram no PDF do diário e
             sustentam a medição.
           </p>
@@ -189,7 +191,7 @@ export default function DiarioPage() {
       {data === hoje && (
         <Link
           to="/fechamento"
-          className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
+          className="mt-3 inline-block btn-link"
         >
           Fechar o dia
         </Link>
@@ -199,7 +201,7 @@ export default function DiarioPage() {
         type="button"
         onClick={pdf}
         disabled={baixando}
-        className="mt-4 h-14 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-50"
+        className="btn-primary mt-4 h-14"
       >
         {baixando ? 'Gerando…' : 'EXPORTAR PDF'}
       </button>

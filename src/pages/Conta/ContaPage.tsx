@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
-import type { MotivoParadaDto } from '../../app/models/entity/Cadastro.dto'
+import type { MotivoParadaDto, UsuarioListaDto } from '../../app/models/entity/Cadastro.dto'
 import { ativarPush, desligarPush } from '../../app/services/premag/push'
 import { api } from '../../app/services/premag/api.service'
 import { loadSession } from '../../app/services/premag/session'
@@ -27,6 +27,10 @@ export default function ContaPage() {
   const [motivoNome, setMotivoNome] = useState('')
   const [motivoObs, setMotivoObs] = useState(false)
   const [motivoEditar, setMotivoEditar] = useState<string | null>(null)
+  const [usuarios, setUsuarios] = useState<UsuarioListaDto[]>([])
+  const [alvoSenha, setAlvoSenha] = useState('')
+  const [senhaOutro, setSenhaOutro] = useState('')
+  const [confirmaOutro, setConfirmaOutro] = useState('')
 
   useEffect(() => {
     if (!gerir) return
@@ -37,6 +41,7 @@ export default function ContaPage() {
         setMotivos(c.motivosParada)
       })
       .catch(() => undefined)
+    cadastroService.usuarios().then(setUsuarios).catch(() => undefined)
   }, [gerir])
 
   async function recarregarMotivos() {
@@ -68,21 +73,17 @@ export default function ContaPage() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="mb-3 font-mono text-[10px] uppercase tracking-wider text-aco"
-      >
+      <button type="button" onClick={() => navigate(-1)} className="link-back">
         ← Voltar
       </button>
-      <p className="font-disp text-xl">Conta</p>
-      <p className="mt-1 text-sm text-aco">
+      <p className="page-title">Conta</p>
+      <p className="page-sub">
         Troca de senha{gerir ? ', jornada da planta e motivos de parada' : ''} e notificações neste aparelho.
       </p>
 
       {gerir && (
         <form
-          className="mt-4 rounded border border-[#CFCCC5] bg-papel p-4"
+          className="mt-4 card-pad"
           onSubmit={async (e) => {
             e.preventDefault()
             setErro(null)
@@ -99,43 +100,43 @@ export default function ContaPage() {
             }
           }}
         >
-          <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Jornada e almoço</p>
+          <p className="kicker">Jornada e almoço</p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <label className="block">
-              <span className="font-mono text-[10px] uppercase text-aco">Início</span>
+              <span className="label">Início</span>
               <input
                 type="time"
-                className="mt-1 w-full rounded border border-[#CFCCC5] px-2 py-2 text-sm"
+                className="input"
                 value={jornada.jornadaInicio}
                 onChange={(e) => setJornada({ ...jornada, jornadaInicio: e.target.value })}
                 required
               />
             </label>
             <label className="block">
-              <span className="font-mono text-[10px] uppercase text-aco">Fim</span>
+              <span className="label">Fim</span>
               <input
                 type="time"
-                className="mt-1 w-full rounded border border-[#CFCCC5] px-2 py-2 text-sm"
+                className="input"
                 value={jornada.jornadaFim}
                 onChange={(e) => setJornada({ ...jornada, jornadaFim: e.target.value })}
                 required
               />
             </label>
             <label className="block">
-              <span className="font-mono text-[10px] uppercase text-aco">Almoço início</span>
+              <span className="label">Almoço início</span>
               <input
                 type="time"
-                className="mt-1 w-full rounded border border-[#CFCCC5] px-2 py-2 text-sm"
+                className="input"
                 value={jornada.intervaloInicio}
                 onChange={(e) => setJornada({ ...jornada, intervaloInicio: e.target.value })}
                 required
               />
             </label>
             <label className="block">
-              <span className="font-mono text-[10px] uppercase text-aco">Almoço fim</span>
+              <span className="label">Almoço fim</span>
               <input
                 type="time"
-                className="mt-1 w-full rounded border border-[#CFCCC5] px-2 py-2 text-sm"
+                className="input"
                 value={jornada.intervaloFim}
                 onChange={(e) => setJornada({ ...jornada, intervaloFim: e.target.value })}
                 required
@@ -148,7 +149,7 @@ export default function ContaPage() {
           <button
             type="submit"
             disabled={enviando}
-            className="mt-3 w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+            className="btn-primary mt-3"
           >
             {enviando ? 'Salvando…' : 'Salvar jornada'}
           </button>
@@ -156,8 +157,8 @@ export default function ContaPage() {
       )}
 
       {gerir && (
-        <div className="mt-4 rounded border border-[#CFCCC5] bg-papel p-4">
-          <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Motivos de parada</p>
+        <div className="mt-4 card-pad">
+          <p className="kicker">Motivos de parada</p>
           <p className="mt-1 text-xs text-aco">
             Usados no intervalo entre serviços e nos alertas. Motivo desativado some da escolha; o histórico permanece.
           </p>
@@ -165,7 +166,7 @@ export default function ContaPage() {
             {motivos.map((m) => (
               <div
                 key={m.id}
-                className={`rounded border border-[#CFCCC5] px-3 py-2 ${m.ativo === false ? 'opacity-50' : ''}`}
+                className={`rounded-xl border border-linha px-3 py-2 ${m.ativo === false ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="font-disp text-[15px]">{m.nome}</span>
@@ -176,7 +177,7 @@ export default function ContaPage() {
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"
-                    className="font-mono text-[10px] uppercase tracking-wider text-ambar"
+                    className="btn-link"
                     onClick={() => {
                       setMotivoEditar(m.id)
                       setMotivoNome(m.nome)
@@ -188,7 +189,7 @@ export default function ContaPage() {
                   {m.ativo === false ? (
                     <button
                       type="button"
-                      className="font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
+                      className="btn-link"
                       onClick={async () => {
                         setErro(null)
                         try {
@@ -209,7 +210,7 @@ export default function ContaPage() {
                   ) : (
                     <button
                       type="button"
-                      className="font-mono text-[10px] uppercase tracking-wider text-red-800"
+                      className="font-mono text-[10px] uppercase tracking-wider text-alerta"
                       onClick={async () => {
                         if (!confirm(`Desativar “${m.nome}”? Ele some da lista de escolha.`)) return
                         setErro(null)
@@ -263,11 +264,11 @@ export default function ContaPage() {
               }
             }}
           >
-            <p className="font-mono text-[10px] uppercase tracking-wider text-aco">
+            <p className="kicker">
               {motivoEditar ? 'Alterar motivo' : 'Novo motivo'}
             </p>
             <input
-              className="w-full rounded border border-[#CFCCC5] px-3 py-2 text-sm"
+              className="input"
               value={motivoNome}
               onChange={(e) => setMotivoNome(e.target.value)}
               placeholder="Nome"
@@ -281,7 +282,7 @@ export default function ContaPage() {
             <button
               type="submit"
               disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+              className="btn-primary"
             >
               {enviando ? 'Salvando…' : motivoEditar ? 'Salvar motivo' : 'Cadastrar motivo'}
             </button>
@@ -302,11 +303,11 @@ export default function ContaPage() {
         </div>
       )}
 
-      <form onSubmit={senha} className="mt-4 rounded border border-[#CFCCC5] bg-papel p-4">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Senha</p>
+      <form onSubmit={senha} className="mt-4 card-pad">
+        <p className="kicker">Senha</p>
         <input
           type="password"
-          className="mt-2 w-full rounded border border-[#CFCCC5] px-3 py-2 text-sm"
+          className="input mt-2"
           placeholder="Senha atual"
           value={atual}
           onChange={(e) => setAtual(e.target.value)}
@@ -314,7 +315,7 @@ export default function ContaPage() {
         />
         <input
           type="password"
-          className="mt-2 w-full rounded border border-[#CFCCC5] px-3 py-2 text-sm"
+          className="input mt-2"
           placeholder="Senha nova (mín. 8)"
           value={nova}
           onChange={(e) => setNova(e.target.value)}
@@ -323,29 +324,101 @@ export default function ContaPage() {
         />
         <input
           type="password"
-          className="mt-2 w-full rounded border border-[#CFCCC5] px-3 py-2 text-sm"
+          className="input mt-2"
           placeholder="Confirmar senha nova"
           value={confirma}
           onChange={(e) => setConfirma(e.target.value)}
           minLength={8}
           required
         />
-        {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
-        {ok && <p className="mt-2 text-sm text-green-800">{ok}</p>}
+        {erro && <p className="alert alert-erro mt-2">{erro}</p>}
+        {ok && <p className="alert alert-ok mt-2">{ok}</p>}
         <button
           type="submit"
           disabled={enviando}
-          className="mt-3 w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+          className="btn-primary mt-3"
         >
           {enviando ? 'Salvando…' : 'Trocar senha'}
         </button>
       </form>
 
-      <div className="mt-3 rounded border border-[#CFCCC5] bg-papel p-4">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Notificações</p>
+      {gerir && (
+        <form
+          className="mt-4 card-pad"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            setErro(null)
+            setOk(null)
+            if (!alvoSenha) {
+              setErro('Escolha o usuário.')
+              return
+            }
+            if (senhaOutro !== confirmaOutro) {
+              setErro('A confirmação não bate com a senha nova.')
+              return
+            }
+            setEnviando(true)
+            try {
+              await cadastroService.redefinirSenha(alvoSenha, senhaOutro)
+              setSenhaOutro('')
+              setConfirmaOutro('')
+              setOk('Senha redefinida. O usuário entra de novo com a senha nova.')
+            } catch (err) {
+              setErro(mensagemErro(err, 'Não foi possível redefinir a senha.'))
+            } finally {
+              setEnviando(false)
+            }
+          }}
+        >
+          <p className="kicker">Redefinir senha</p>
+          <p className="mt-1 text-xs text-aco">Gerente grava uma senha nova para o login. Não usa e-mail.</p>
+          <select
+            className="input mt-2"
+            value={alvoSenha}
+            onChange={(e) => setAlvoSenha(e.target.value)}
+            required
+          >
+            <option value="">Escolha o usuário</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome} · {u.userName} · {u.perfil}
+                {u.equipeNome ? ` · ${u.equipeNome}` : ''}
+              </option>
+            ))}
+          </select>
+          <input
+            type="password"
+            className="input mt-2"
+            placeholder="Senha nova (mín. 8)"
+            value={senhaOutro}
+            onChange={(e) => setSenhaOutro(e.target.value)}
+            minLength={8}
+            required
+          />
+          <input
+            type="password"
+            className="input mt-2"
+            placeholder="Confirmar senha nova"
+            value={confirmaOutro}
+            onChange={(e) => setConfirmaOutro(e.target.value)}
+            minLength={8}
+            required
+          />
+          <button
+            type="submit"
+            disabled={enviando}
+            className="btn-dark mt-3 font-mono text-[11px] uppercase tracking-wider"
+          >
+            {enviando ? 'Salvando…' : 'Gravar senha nova'}
+          </button>
+        </form>
+      )}
+
+      <div className="mt-3 card-pad">
+        <p className="kicker">Notificações</p>
         <button
           type="button"
-          className="mt-2 font-mono text-[10px] uppercase tracking-wider text-[#B07500]"
+          className="btn-link mt-2"
           onClick={async () => {
             const r = await ativarPush()
             setOk(r === 'ok' ? 'Notificações ativas neste aparelho.' : null)

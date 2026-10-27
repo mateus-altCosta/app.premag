@@ -92,11 +92,11 @@ export default function FechamentoPage() {
 
   return (
     <div>
-      {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
+      {erro && <p className="alert alert-erro mb-3">{erro}</p>}
 
-      <div className="rounded border border-[#3d4348] bg-grafite p-4 text-papel">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-ambar">Fechamento do dia</p>
-        <p className="mt-1 font-disp text-2xl">{dia ? fmtData(dia.data) : '…'}</p>
+      <div className="rounded-xl border border-white/10 bg-grafite p-4 text-papel shadow-sm">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ambar">Fechamento do dia</p>
+        <p className="mt-1 font-disp text-2xl tracking-wide">{dia ? fmtData(dia.data) : '…'}</p>
         <p className="mt-2 text-sm text-[#9aa2a9]">
           Confirma que o apontamento da equipe está completo. Depois disso ninguém inicia, encerra, lança quantidade
           nem anexa foto neste dia — até a gerência reabrir com motivo. Passados {dia?.diasFechamento ?? 3} dias o
@@ -104,7 +104,7 @@ export default function FechamentoPage() {
         </p>
         <Link
           to={diarioDoDia(data, equipeId)}
-          className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-ambar"
+          className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-ambar hover:text-papel"
         >
           Abrir diário do dia
         </Link>
@@ -118,18 +118,18 @@ export default function FechamentoPage() {
       {gerir && (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <label className="block">
-            <span className="font-mono text-[10px] uppercase text-aco">Data</span>
+            <span className="label">Data</span>
             <input
               type="date"
-              className="mt-1 w-full rounded border border-[#CFCCC5] bg-papel px-2 py-2 text-sm"
+              className="input"
               value={data}
               onChange={(e) => setData(e.target.value)}
             />
           </label>
           <label className="block">
-            <span className="font-mono text-[10px] uppercase text-aco">Escopo</span>
+            <span className="label">Escopo</span>
             <select
-              className="mt-1 w-full rounded border border-[#CFCCC5] bg-papel px-2 py-2 text-sm"
+              className="input"
               value={equipeId}
               onChange={(e) => setEquipeId(e.target.value)}
             >
@@ -145,29 +145,29 @@ export default function FechamentoPage() {
       )}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="rounded border border-[#CFCCC5] bg-papel p-3">
-          <p className="font-mono text-[10px] uppercase text-aco">HH apontado</p>
-          <p className="font-disp text-xl">{dia?.horasApontadas ?? '—'}</p>
+        <div className="card p-3.5">
+          <p className="kicker">HH apontado</p>
+          <p className="metric-value mt-1 text-[1.4rem]">{dia?.horasApontadas ?? '—'}</p>
         </div>
-        <div className="rounded border border-[#CFCCC5] bg-papel p-3">
-          <p className="font-mono text-[10px] uppercase text-aco">Fotos</p>
-          <p className="font-disp text-xl">{dia?.fotos ?? '—'}</p>
+        <div className="card p-3.5">
+          <p className="kicker">Fotos</p>
+          <p className="metric-value mt-1 text-[1.4rem]">{dia?.fotos ?? '—'}</p>
         </div>
-        <div className="rounded border border-[#CFCCC5] bg-papel p-3">
-          <p className="font-mono text-[10px] uppercase text-aco">Serviços abertos</p>
-          <p className="font-disp text-xl">{dia?.apontamentosAbertos ?? '—'}</p>
+        <div className="card p-3.5">
+          <p className="kicker">Serviços abertos</p>
+          <p className="metric-value mt-1 text-[1.4rem]">{dia?.apontamentosAbertos ?? '—'}</p>
         </div>
-        <div className="rounded border border-[#CFCCC5] bg-papel p-3">
-          <p className="font-mono text-[10px] uppercase text-aco">Presentes sem serviço</p>
-          <p className="font-disp text-xl">{dia?.presentesSemServico ?? '—'}</p>
+        <div className="card p-3.5">
+          <p className="kicker">Presentes sem serviço</p>
+          <p className="metric-value mt-1 text-[1.4rem]">{dia?.presentesSemServico ?? '—'}</p>
         </div>
       </div>
 
-      <div className="mt-3 rounded border border-[#CFCCC5] bg-papel p-4">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-aco">{dia?.escopo ?? '…'}</p>
+      <div className="mt-3 card-pad">
+        <p className="kicker">{dia?.escopo ?? '…'}</p>
         {dia?.fechado ? (
           <>
-            <p className="mt-1 font-disp text-xl text-[#8a2b22]">Dia fechado</p>
+            <p className="mt-1 font-disp text-xl text-alerta">Dia fechado</p>
             {dia.fechadoPorCalendario ? (
               <p className="mt-1 text-sm text-aco">Fechado pelo prazo de {dia.diasFechamento} dias (RN-15).</p>
             ) : (
@@ -195,7 +195,7 @@ export default function FechamentoPage() {
           type="button"
           disabled={enviando || (dia.apontamentosAbertos > 0)}
           onClick={() => void fechar()}
-          className="mt-4 w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
+          className="btn-primary mt-4"
         >
           {enviando ? 'Fechando…' : 'Fechar o dia'}
         </button>
@@ -207,7 +207,7 @@ export default function FechamentoPage() {
       {dia?.fechado && gerir && !dia.fechadoPorCalendario && (
         <div className="mt-4">
           <input
-            className="w-full rounded border border-[#CFCCC5] px-3 py-2 text-sm"
+            className="input"
             placeholder="Motivo da reabertura"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
@@ -216,12 +216,12 @@ export default function FechamentoPage() {
             type="button"
             disabled={enviando}
             onClick={() => void reabrir()}
-            className="mt-2 w-full border border-[#CFCCC5] py-3 font-mono text-[10px] uppercase tracking-wider"
+            className="btn-ghost mt-2 w-full py-3"
           >
             {enviando ? 'Reabrindo…' : 'Reabrir o dia'}
           </button>
           {erro && (
-            <p className="mt-2 text-sm text-red-700">{erro}</p>
+            <p className="alert alert-erro mt-2">{erro}</p>
           )}
         </div>
       )}

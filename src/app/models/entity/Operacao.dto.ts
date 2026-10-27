@@ -54,7 +54,9 @@ export interface OcorrenciaDto {
   detectadaEm: string
   minutosDecorridos?: number | null
   reconhecidaEm?: string | null
+  reconhecidaPorNome?: string | null
   justificativa?: string | null
+  gerouParada?: boolean
 }
 
 export interface RelatorioLinhaDto {
@@ -77,6 +79,7 @@ export interface RelatorioLinhaDto {
 export interface RelatorioDto {
   tipo: string
   periodo: string
+  escopo?: string
   linhas: RelatorioLinhaDto[]
   nota: string
 }

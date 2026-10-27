@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Sheet from '../../components/Sheet'
 import Regua from '../../components/Regua'
+import { AlertMsg, Chip } from '../../components/ui'
 import type { EquipeDto, UsuarioResumoDto } from '../../app/models/entity/Cadastro.dto'
 import type { TurnoColaboradorDto, TurnoDto } from '../../app/models/entity/Turno.dto'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
@@ -149,17 +150,13 @@ export default function EquipePage() {
   return (
     <div>
       {gerir && (
-        <button
-          type="button"
-          onClick={() => navigate('/equipes')}
-          className="mb-3 font-mono text-[10px] uppercase tracking-wider text-aco"
-        >
+        <button type="button" onClick={() => navigate('/equipes')} className="link-back">
           ← Voltar para equipes
         </button>
       )}
-      <div className="mb-3 rounded border border-[#CFCCC5] bg-papel p-4">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Situação agora</p>
-        <p className="mt-1 font-disp text-xl">{turno?.equipeNome ?? 'Equipe'}</p>
+      <div className="mb-3 card-pad">
+        <p className="kicker">Situação agora</p>
+        <p className="mt-1 font-disp text-[1.45rem] tracking-wide">{turno?.equipeNome ?? 'Equipe'}</p>
         {equipes.find((e) => e.id === id)?.encarregadoNome && (
           <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-aco">
             Encarregado · {equipes.find((e) => e.id === id)?.encarregadoNome}
@@ -168,7 +165,7 @@ export default function EquipePage() {
         {gerir && (
           <button
             type="button"
-            className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+            className="mt-2 btn-link"
             onClick={() => {
               const atual = equipes.find((e) => e.id === id)
               setEqNome(atual?.nome ?? turno?.equipeNome ?? '')
@@ -180,23 +177,47 @@ export default function EquipePage() {
             Alterar equipe
           </button>
         )}
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          <div>
-            <div className="font-disp text-3xl">{presentes.length}</div>
-            <div className="font-mono text-[10px] uppercase text-aco">presentes</div>
+        {gerir && (
+          <button
+            type="button"
+            className="mt-2 ml-3 font-mono text-[10px] uppercase tracking-wider text-alerta"
+            onClick={async () => {
+              if (!id) return
+              const nomeEq = turno?.equipeNome ?? 'esta equipe'
+              if (
+                !confirm(
+                  `Encerrar “${nomeEq}”? Ela some da lista. Apontamentos e fotos já feitos continuam no histórico.`,
+                )
+              )
+                return
+              try {
+                await cadastroService.inativarEquipe(id)
+                navigate('/equipes')
+              } catch (err) {
+                setErro(mensagemErro(err, 'Não foi possível encerrar a equipe.'))
+              }
+            }}
+          >
+            Encerrar equipe
+          </button>
+        )}
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="rounded-xl bg-concreto/80 px-2 py-2.5 text-center">
+            <div className="metric-value text-[1.55rem]">{presentes.length}</div>
+            <div className="metric-label">presentes</div>
           </div>
-          <div>
-            <div className={`font-disp text-3xl ${semServico ? 'text-ambar' : ''}`}>{semServico}</div>
-            <div className="font-mono text-[10px] uppercase text-aco">sem serviço</div>
+          <div className="rounded-xl bg-concreto/80 px-2 py-2.5 text-center">
+            <div className={`metric-value text-[1.55rem] ${semServico ? 'text-ambar' : ''}`}>{semServico}</div>
+            <div className="metric-label">sem serviço</div>
           </div>
-          <div>
-            <div className="font-disp text-3xl">{horas(hhTotal)}</div>
-            <div className="font-mono text-[10px] uppercase text-aco">HH apontado</div>
+          <div className="rounded-xl bg-concreto/80 px-2 py-2.5 text-center">
+            <div className="metric-value text-[1.55rem]">{horas(hhTotal)}</div>
+            <div className="metric-label">HH apontado</div>
           </div>
         </div>
       </div>
 
-      {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
+      {erro && <AlertMsg>{erro}</AlertMsg>}
 
       <div className="space-y-2">
         {lista.map((c) => {
@@ -206,9 +227,9 @@ export default function EquipePage() {
               key={c.id}
               type="button"
               onClick={() => presente && navigate(`/equipes/${id}/colaboradores/${c.id}`)}
-              className={`w-full rounded border border-[#CFCCC5] bg-papel px-3 py-3 text-left ${
-                presente ? '' : 'opacity-60'
-              } ${c.aberto ? 'border-green-700/40' : c.minutosNaoApropriados > 30 && presente ? 'border-ambar' : ''}`}
+              className={`card w-full px-3.5 py-3.5 text-left transition ${
+                presente ? '' : 'opacity-55'
+              } ${c.aberto ? 'border-ok/35 ring-1 ring-ok/15' : c.minutosNaoApropriados > 30 && presente ? 'border-ambar' : ''}`}
             >
               <div className="flex items-baseline justify-between gap-2">
                 <div className="min-w-0">
@@ -216,8 +237,8 @@ export default function EquipePage() {
                   <span className="font-disp text-[16px]">{c.nome}</span>
                 </div>
                 <span
-                  className={`shrink-0 font-mono text-[9px] uppercase tracking-wider ${
-                    !presente ? 'text-aco' : c.aberto ? 'text-green-800' : 'text-red-800'
+                  className={`shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
+                    !presente ? 'bg-concreto text-aco' : c.aberto ? 'bg-emerald-50 text-ok' : 'bg-red-50 text-alerta'
                   }`}
                 >
                   {!presente ? String(c.situacao).toUpperCase() : c.aberto ? 'Em serviço' : 'Parado'}
@@ -254,7 +275,7 @@ export default function EquipePage() {
                 <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
-                    className="border border-[#CFCCC5] px-2 py-1 font-mono text-[10px] uppercase"
+                    className="btn-ghost"
                     onClick={() => {
                       setAlvo(c)
                       setNome(c.nome)
@@ -268,7 +289,7 @@ export default function EquipePage() {
                   </button>
                   <button
                     type="button"
-                    className="border border-[#CFCCC5] px-2 py-1 font-mono text-[10px] uppercase"
+                    className="btn-ghost"
                     onClick={() => {
                       setAlvo(c)
                       setDestino(id ?? '')
@@ -279,7 +300,7 @@ export default function EquipePage() {
                   </button>
                   <button
                     type="button"
-                    className="border border-[#CFCCC5] px-2 py-1 font-mono text-[10px] uppercase text-red-800"
+                    className="btn-ghost text-alerta"
                     onClick={() => excluir(c)}
                   >
                     Excluir
@@ -299,7 +320,7 @@ export default function EquipePage() {
             setCodigo('')
             setFolha('novo')
           }}
-          className="mt-3 w-full rounded border border-dashed border-[#B07500] py-3 font-mono text-[11px] uppercase tracking-wider text-[#B07500]"
+          className="btn-dashed mt-3"
         >
           + Cadastrar funcionário
         </button>
@@ -317,11 +338,7 @@ export default function EquipePage() {
               Código externo é o documento da folha (mesmo da coluna do CSV). Sem valor da hora, o funcionário entra
               no diário e fica fora do relatório de custo.
             </p>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
-            >
+            <button type="submit" disabled={enviando} className="btn-primary">
               {enviando ? 'Salvando…' : 'Cadastrar'}
             </button>
           </form>
@@ -335,11 +352,7 @@ export default function EquipePage() {
             <Campo label="Função" value={funcao} onChange={setFuncao} />
             <Campo label="Código externo" value={codigo} onChange={setCodigo} />
             <Campo label="Valor da hora (R$)" value={custo} onChange={setCusto} />
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
-            >
+            <button type="submit" disabled={enviando} className="btn-primary">
               {enviando ? 'Salvando…' : 'Salvar'}
             </button>
           </form>
@@ -372,51 +385,34 @@ export default function EquipePage() {
           >
             <Campo label="Nome" value={eqNome} onChange={setEqNome} required />
             <div>
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Encarregado</p>
+              <p className="label">Encarregado</p>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEqEnc('')}
-                  className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                    !eqEnc ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                  }`}
-                >
+                <Chip ativo={!eqEnc} onClick={() => setEqEnc('')}>
                   Nenhum
-                </button>
+                </Chip>
                 {encarregados.map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => setEqEnc(u.id)}
-                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                      eqEnc === u.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                    }`}
-                  >
+                  <Chip key={u.id} ativo={eqEnc === u.id} onClick={() => setEqEnc(u.id)}>
                     {u.nome}
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </div>
             <div>
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-aco">Cor</p>
+              <p className="label">Cor</p>
               <div className="flex flex-wrap gap-2">
                 {CORES_EQUIPE.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setEqCor(c)}
-                    className={`h-9 w-9 rounded border ${eqCor.toUpperCase() === c ? 'border-ambar ring-2 ring-ambar' : 'border-[#CFCCC5]'}`}
+                    className={`h-9 w-9 rounded-lg border ${eqCor.toUpperCase() === c ? 'border-grafite ring-2 ring-ambar' : 'border-linha'}`}
                     style={{ background: c }}
                     aria-label={c}
                   />
                 ))}
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
-            >
+            <button type="submit" disabled={enviando} className="btn-primary">
               {enviando ? 'Salvando…' : 'Salvar equipe'}
             </button>
           </form>
@@ -426,27 +422,16 @@ export default function EquipePage() {
       {folha === 'mover' && alvo && (
         <Sheet titulo={`Mover ${alvo.nome}`} onClose={() => setFolha(null)}>
           <form onSubmit={onMover} className="space-y-3">
-            <p className="font-mono text-[10px] uppercase text-aco">Nova equipe</p>
+            <p className="kicker">Nova equipe</p>
             <div className="flex flex-wrap gap-2">
               {equipes.map((e) => (
-                <button
-                  key={e.id}
-                  type="button"
-                  onClick={() => setDestino(e.id)}
-                  className={`rounded border px-3 py-2 font-mono text-[11px] uppercase ${
-                    destino === e.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                  }`}
-                >
+                <Chip key={e.id} ativo={destino === e.id} onClick={() => setDestino(e.id)}>
                   {e.nome}
-                </button>
+                </Chip>
               ))}
             </div>
             <p className="text-xs text-aco">Os serviços já apontados hoje permanecem na equipe de origem.</p>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full rounded bg-ambar py-3 font-disp text-lg text-grafite disabled:opacity-50"
-            >
+            <button type="submit" disabled={enviando} className="btn-primary">
               {enviando ? 'Salvando…' : 'Confirmar transferência'}
             </button>
           </form>
@@ -469,9 +454,9 @@ function Campo({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">{label}</span>
+      <span className="label">{label}</span>
       <input
-        className="w-full rounded border border-[#CFCCC5] bg-white px-3 py-2 outline-none focus:border-ambar"
+        className="input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}

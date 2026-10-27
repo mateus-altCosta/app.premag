@@ -116,7 +116,7 @@ export default function FotoSheet({
   return (
     <Sheet titulo="Registro fotográfico" onClose={onClose}>
       <form onSubmit={onSubmit} className="space-y-4">
-        {erro && <p className="text-sm text-red-700">{erro}</p>}
+        {erro && <p className="alert alert-erro">{erro}</p>}
         <input
           ref={inputRef}
           type="file"
@@ -127,13 +127,13 @@ export default function FotoSheet({
         />
         {!preview ? (
           <>
-            <p className="rounded border border-dashed border-[#CFCCC5] p-8 text-center text-sm text-aco">
+            <p className="empty p-8 text-center">
               Nenhuma imagem capturada.
             </p>
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="h-14 w-full rounded bg-ambar font-disp text-lg text-grafite"
+              className="btn-primary h-14"
             >
               ABRIR CÂMERA
             </button>
@@ -143,11 +143,11 @@ export default function FotoSheet({
           </>
         ) : (
           <>
-            <img src={preview} alt="captura" className="w-full rounded border border-[#CFCCC5]" />
+            <img src={preview} alt="captura" className="w-full rounded-xl border border-linha" />
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="w-full rounded border border-[#CFCCC5] py-2 font-mono text-[11px] uppercase"
+              className="btn-ghost w-full"
             >
               Refazer foto
             </button>
@@ -159,9 +159,7 @@ export default function FotoSheet({
                     key={t.id}
                     type="button"
                     onClick={() => setTipo(t.id)}
-                    className={`rounded border px-3 py-1.5 font-mono text-[11px] uppercase ${
-                      tipo === t.id ? 'border-ambar bg-ambar text-grafite' : 'border-[#CFCCC5]'
-                    }`}
+                    className={`chip ${tipo === t.id ? 'chip-on' : ''}`}
                   >
                     {t.label}
                   </button>
@@ -176,8 +174,8 @@ export default function FotoSheet({
                     key={f.id}
                     type="button"
                     onClick={() => setFrenteId(f.id)}
-                    className={`flex w-full items-center gap-2 rounded border px-3 py-2 text-left ${
-                      frenteId === f.id ? 'border-ambar' : 'border-[#CFCCC5]'
+                    className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left ${
+                      frenteId === f.id ? 'border-grafite bg-concreto' : 'border-linha'
                     }`}
                   >
                     <span className="h-8 w-1 shrink-0 rounded" style={{ background: f.cor }} />
@@ -193,11 +191,11 @@ export default function FotoSheet({
             </div>
             {tipo === 'Avanco' && (
               <label className="block">
-                <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">
+                <span className="label">
                   Quantidade concluída{frente ? ` (${frente.unidade})` : ''}
                 </span>
                 <input
-                  className="w-full rounded border border-[#CFCCC5] px-3 py-3"
+                  className="input"
                   inputMode="decimal"
                   value={qtd}
                   onChange={(e) => setQtd(e.target.value)}
@@ -210,9 +208,9 @@ export default function FotoSheet({
               </label>
             )}
             <label className="block">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-aco">Observação</span>
+              <span className="label">Observação</span>
               <input
-                className="w-full rounded border border-[#CFCCC5] px-3 py-2"
+                className="input"
                 value={obs}
                 onChange={(e) => setObs(e.target.value)}
                 placeholder="Ex.: 6 vigas armadas na pista 02"
@@ -221,7 +219,7 @@ export default function FotoSheet({
             <button
               type="submit"
               disabled={!blob || !frenteId || enviando}
-              className="h-14 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-40"
+              className="btn-primary h-14"
             >
               {enviando ? 'Enviando…' : 'ANEXAR AO DIÁRIO'}
             </button>

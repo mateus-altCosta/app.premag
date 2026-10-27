@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { ObraDto } from '../../app/models/entity/Cadastro.dto'
+import type { EquipeDto, ObraDto } from '../../app/models/entity/Cadastro.dto'
 import type { RelatorioDto, RelatorioLinhaDto } from '../../app/models/entity/Operacao.dto'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import { operacaoService } from '../../app/services/premag/operacao.service'
@@ -18,9 +18,7 @@ const n0 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 0 }
 const n2 = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
 
 function segmento(ativo: boolean) {
-  return `flex-1 rounded px-2 py-2 font-mono text-[11px] uppercase tracking-wider ${
-    ativo ? 'bg-ambar text-grafite' : 'text-aco'
-  }`
+  return `seg-item ${ativo ? 'seg-item-on' : ''}`
 }
 
 function Metrica({
@@ -45,7 +43,7 @@ function desvio(l: RelatorioLinhaDto) {
   const acima = l.desvioPercentual > 0
   return {
     texto: `${acima ? '▲' : '▼'} ${n0(Math.abs(l.desvioPercentual))}%`,
-    tom: acima ? 'text-red-800' : 'text-green-800',
+    tom: acima ? 'text-alerta' : 'text-ok',
   }
 }
 
@@ -53,28 +51,31 @@ export default function RelatoriosPage() {
   const [tipo, setTipo] = useState('produtividade')
   const [periodo, setPeriodo] = useState('hoje')
   const [obraId, setObraId] = useState('')
+  const [equipeId, setEquipeId] = useState('')
   const [obras, setObras] = useState<ObraDto[]>([])
+  const [equipes, setEquipes] = useState<EquipeDto[]>([])
   const [rel, setRel] = useState<RelatorioDto | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const [baixando, setBaixando] = useState(false)
 
   useEffect(() => {
     cadastroService.obras().then(setObras).catch(() => undefined)
+    cadastroService.equipes().then(setEquipes).catch(() => undefined)
   }, [])
 
   useEffect(() => {
     operacaoService
-      .relatorio(tipo, periodo, obraId || undefined)
+      .relatorio(tipo, periodo, obraId || undefined, equipeId || undefined)
       .then(setRel)
       .catch((e) => setErro(mensagemErro(e, 'Não foi possível carregar o relatório.')))
-  }, [tipo, periodo, obraId])
+  }, [tipo, periodo, obraId, equipeId])
 
   async function exportar(formato: 'csv' | 'pdf') {
     setBaixando(true)
     setErro(null)
     try {
-      if (formato === 'pdf') await operacaoService.relatorioPdf(tipo, periodo, obraId || undefined)
-      else await operacaoService.relatorioCsv(tipo, periodo, obraId || undefined)
+      if (formato === 'pdf') await operacaoService.relatorioPdf(tipo, periodo, obraId || undefined, equipeId || undefined)
+      else await operacaoService.relatorioCsv(tipo, periodo, obraId || undefined, equipeId || undefined)
     } catch (e) {
       setErro(mensagemErro(e, formato === 'pdf' ? 'Não foi possível gerar o PDF.' : 'Não foi possível exportar o CSV.'))
     } finally {
@@ -106,20 +107,23 @@ export default function RelatoriosPage() {
 
   return (
     <div>
-      {erro && <p className="mb-3 text-sm text-red-700">{erro}</p>}
+      {erro && <p className="alert alert-erro mb-3">{erro}</p>}
 
-      <div className="rounded border border-[#CFCCC5] bg-papel p-4">
-        <p className="font-mono text-[10px] uppercase tracking-wider text-aco">Relatório · {tipoNome}</p>
-        <p className="mt-1 font-disp text-2xl leading-tight">{periodoNome}</p>
+      <div className="card-pad">
+        <p className="kicker">
+          Relatório · {tipoNome}
+          {rel?.escopo ? ` · ${rel.escopo}` : ''}
+        </p>
+        <p className="mt-1 font-disp text-2xl leading-tight tracking-wide">{periodoNome}</p>
 
-        <div className="mt-4 flex gap-1 rounded border border-[#CFCCC5] bg-white p-1">
+        <div className="seg mt-4">
           {TIPOS.map((t) => (
             <button key={t.id} type="button" className={segmento(tipo === t.id)} onClick={() => setTipo(t.id)}>
               {t.label}
             </button>
           ))}
         </div>
-        <div className="mt-2 flex gap-1 rounded border border-[#CFCCC5] bg-white p-1">
+        <div className="seg mt-2">
           {PERIODOS.map((p) => (
             <button key={p.id} type="button" className={segmento(periodo === p.id)} onClick={() => setPeriodo(p.id)}>
               {p.label}
@@ -127,9 +131,9 @@ export default function RelatoriosPage() {
           ))}
         </div>
         <label className="mt-3 block">
-          <span className="font-mono text-[10px] uppercase text-aco">Obra</span>
+          <span className="label">Obra</span>
           <select
-            className="mt-1 w-full rounded border border-[#CFCCC5] bg-white px-2 py-2 text-sm"
+            className="input"
             value={obraId}
             onChange={(e) => setObraId(e.target.value)}
           >
@@ -143,16 +147,31 @@ export default function RelatoriosPage() {
               ))}
           </select>
         </label>
+        <label className="mt-3 block">
+          <span className="label">Equipe</span>
+          <select
+            className="input"
+            value={equipeId}
+            onChange={(e) => setEquipeId(e.target.value)}
+          >
+            <option value="">Planta inteira</option>
+            {equipes.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nome}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="mt-4">
-        <h3 className="font-disp text-lg">Frentes</h3>
-        <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">
+        <h3 className="font-disp text-lg tracking-wide">Frentes</h3>
+        <p className="kicker mb-2">
           {linhas.length} {linhas.length === 1 ? 'frente' : 'frentes'}
         </p>
 
         {linhas.length === 0 && (
-          <p className="rounded border border-dashed border-[#CFCCC5] bg-papel p-4 text-sm text-aco">
+          <p className="empty">
             Nenhuma frente neste recorte.
           </p>
         )}
@@ -163,8 +182,8 @@ export default function RelatoriosPage() {
                 const hhUn = indice(l)
                 const vs = desvio(l)
                 return (
-                  <article key={l.frenteId} className="rounded border border-[#CFCCC5] bg-papel p-3">
-                    <p className="font-disp text-[16px] leading-tight">{l.frenteNome}</p>
+                  <article key={l.frenteId} className="card p-3.5">
+                    <p className="font-disp text-[16px] leading-tight tracking-wide">{l.frenteNome}</p>
                     <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
                       <Metrica rotulo="Horas" valor={`${n0(l.hh)} HH`} />
                       <Metrica rotulo="Quantidade" valor={`${n0(l.quantidade)} ${l.unidade}`} />
@@ -175,14 +194,14 @@ export default function RelatoriosPage() {
                 )
               })
             : linhas.map((l) => (
-                <article key={l.frenteId} className="rounded border border-[#CFCCC5] bg-papel p-3">
+                <article key={l.frenteId} className="card p-3.5">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="font-disp text-[16px] leading-tight">{l.frenteNome}</p>
+                    <p className="font-disp text-[16px] leading-tight tracking-wide">{l.frenteNome}</p>
                     <p className="shrink-0 font-disp text-xl tabular-nums">{n0(l.percentualAvanco)}%</p>
                   </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded bg-[#E4E1DA]">
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E4E1DA]">
                     <div
-                      className="h-full bg-ambar"
+                      className="h-full rounded-full bg-ambar"
                       style={{ width: `${Math.min(100, Math.max(0, l.percentualAvanco))}%` }}
                     />
                   </div>
@@ -207,7 +226,7 @@ export default function RelatoriosPage() {
         type="button"
         onClick={() => void exportar('pdf')}
         disabled={baixando}
-        className="mt-3 h-12 w-full rounded bg-ambar font-disp text-lg text-grafite disabled:opacity-50"
+        className="btn-primary mt-3"
       >
         {baixando ? 'Gerando…' : 'Exportar PDF'}
       </button>
@@ -215,7 +234,7 @@ export default function RelatoriosPage() {
         type="button"
         onClick={() => void exportar('csv')}
         disabled={baixando}
-        className="mt-2 h-12 w-full rounded bg-grafite font-mono text-[11px] uppercase tracking-wider text-papel disabled:opacity-50"
+        className="btn-dark mt-2 font-mono text-[11px] uppercase tracking-wider"
       >
         {baixando ? 'Gerando…' : 'Exportar CSV'}
       </button>

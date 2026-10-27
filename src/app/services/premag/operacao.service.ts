@@ -91,8 +91,8 @@ export const operacaoService = {
     return baixarComAuth(`/diario/pdf${qs ? `?${qs}` : ''}`, nomeArquivo || 'diario.pdf')
   },
 
-  ocorrencias: (pendentes = true) =>
-    api.get<OcorrenciaDto[]>('/ocorrencias', { params: { pendentes } }).then((r) => r.data),
+  ocorrencias: (pendentes = true, data?: string) =>
+    api.get<OcorrenciaDto[]>('/ocorrencias', { params: { pendentes, data: data || undefined } }).then((r) => r.data),
 
   reconhecer: (id: string, justificativa?: string, opts?: { gerarParada?: boolean; motivoParadaId?: string }) =>
     api.post(`/ocorrencias/${id}/reconhecer`, {
@@ -101,20 +101,24 @@ export const operacaoService = {
       motivoParadaId: opts?.motivoParadaId || null,
     }),
 
-  relatorio: (tipo: string, periodo: string, obraId?: string) =>
+  relatorio: (tipo: string, periodo: string, obraId?: string, equipeId?: string) =>
     api
-      .get<RelatorioDto>('/relatorios', { params: { tipo, periodo, obraId: obraId || undefined } })
+      .get<RelatorioDto>('/relatorios', {
+        params: { tipo, periodo, obraId: obraId || undefined, equipeId: equipeId || undefined },
+      })
       .then((r) => r.data),
 
-  relatorioCsv: (tipo: string, periodo: string, obraId?: string) => {
+  relatorioCsv: (tipo: string, periodo: string, obraId?: string, equipeId?: string) => {
     const q = new URLSearchParams({ tipo, periodo })
     if (obraId) q.set('obraId', obraId)
+    if (equipeId) q.set('equipeId', equipeId)
     return baixarComAuth(`/relatorios/csv?${q}`, `relatorio-${tipo}-${periodo}.csv`)
   },
 
-  relatorioPdf: (tipo: string, periodo: string, obraId?: string) => {
+  relatorioPdf: (tipo: string, periodo: string, obraId?: string, equipeId?: string) => {
     const q = new URLSearchParams({ tipo, periodo })
     if (obraId) q.set('obraId', obraId)
+    if (equipeId) q.set('equipeId', equipeId)
     return baixarComAuth(`/relatorios/pdf?${q}`, `relatorio-${tipo}-${periodo}.pdf`)
   },
 

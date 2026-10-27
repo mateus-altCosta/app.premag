@@ -11,6 +11,7 @@ import type {
   FrenteDto,
   MotivoParadaDto,
   ObraDto,
+  UsuarioListaDto,
 } from '../../models/entity/Cadastro.dto'
 import { kv } from './idb'
 import { isFalhaDeRede, marcarAlcanceApi } from './rede'
@@ -38,6 +39,12 @@ export const cadastroService = {
   criarEquipe: (dto: CriarEquipeDto) => api.post<EquipeDto>('/equipes', dto).then((r) => r.data),
   atualizarEquipe: (id: string, dto: CriarEquipeDto) =>
     api.put<EquipeDto>(`/equipes/${id}`, dto).then((r) => r.data),
+  inativarEquipe: async (id: string) => {
+    await api.delete(`/equipes/${id}`)
+    await kv.del('equipes')
+  },
+  usuarios: () => api.get<UsuarioListaDto[]>('/usuarios').then((r) => r.data),
+  redefinirSenha: (id: string, senhaNova: string) => api.put(`/usuarios/${id}/senha`, { senhaNova }),
   atualizarJornada: (dto: CatalogoDto['configuracao']) =>
     api.put<CatalogoDto>('/catalogos/configuracao', dto).then((r) => r.data),
   criarMotivo: async (dto: CriarMotivoParadaDto) => {
