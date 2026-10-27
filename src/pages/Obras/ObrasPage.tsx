@@ -70,7 +70,7 @@ export default function ObrasPage() {
           <p className="kicker mt-1">
             {o.cliente} · {o.quantidadeFrentes} frentes
           </p>
-          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[#E4E1DA]">
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-ambar" style={{ width: `${Math.min(100, o.percentualAvanco)}%` }} />
           </div>
         </button>

@@ -184,15 +184,15 @@ export default function AppShell() {
   return (
     <div className="app-frame">
       <div className="app-shell">
-        <header className="z-40 shrink-0 border-b border-white/5 bg-grafite px-4 pb-3 pt-[max(0.85rem,env(safe-area-inset-top))] text-papel">
+        <header className="z-40 shrink-0 border-b border-linha bg-papel px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2.5">
-              <Marca className="h-8 w-8 text-base" />
+              <Marca className="h-8 w-8 text-sm" />
               <div className="min-w-0">
-                <p className="truncate font-disp text-[17px] leading-none tracking-wide">
+                <p className="truncate text-[15px] font-semibold leading-none tracking-tight">
                   {nome}
                 </p>
-                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ambar/90">
+                <p className="mt-1 text-[12px] font-medium text-aco">
                   PREMAG · {perfil ?? '…'}
                 </p>
               </div>
@@ -213,27 +213,27 @@ export default function AppShell() {
                 )}
               </button>
               <span
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-2 py-1.5 font-mono text-[10px] uppercase tracking-wider ${
-                  online ? 'border-white/10 text-papel/55' : 'border-ambar/50 text-ambar'
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[12px] font-medium ${
+                  online ? 'border-linha text-aco' : 'border-ambar/50 bg-ambar/15 text-aviso'
                 }`}
               >
                 <i
-                  className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-emerald-400' : 'animate-pulse bg-ambar'}`}
+                  className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-emerald-500' : 'animate-pulse bg-ambar'}`}
                 />
-                {online ? 'On' : 'Off'}
+                {online ? 'Online' : 'Offline'}
               </span>
               <div className="relative" ref={menuRef}>
                 <button
                   type="button"
                   onClick={() => setMenu((v) => !v)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-ambar font-disp text-[13px] text-grafite"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-grafite text-[12px] font-semibold text-papel"
                   aria-label="Menu da conta"
                   aria-expanded={menu}
                 >
                   {iniciais(nome === '…' ? 'P' : nome)}
                 </button>
                 {menu && (
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-44 overflow-hidden rounded-xl border border-linha bg-papel py-1 text-grafite shadow-lg">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 overflow-hidden rounded-xl border border-linha bg-papel py-1 text-grafite shadow-lg">
                     <button
                       type="button"
                       onClick={() => navigate('/conta')}
@@ -241,15 +241,23 @@ export default function AppShell() {
                     >
                       Conta
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/configuracoes')}
+                      className="flex w-full px-3 py-2.5 text-left text-sm hover:bg-concreto"
+                    >
+                      Configurações
+                    </button>
                     {fila > 0 && (
                       <button
                         type="button"
                         onClick={() => navigate('/pendencias')}
-                        className="flex w-full px-3 py-2.5 text-left text-sm text-[#9a6200] hover:bg-concreto"
+                        className="flex w-full px-3 py-2.5 text-left text-sm text-aviso hover:bg-concreto"
                       >
                         {fila} na fila
                       </button>
                     )}
+                    <div className="my-1 border-t border-linha" />
                     <button
                       type="button"
                       onClick={sair}
@@ -266,7 +274,7 @@ export default function AppShell() {
             <button
               type="button"
               onClick={() => navigate('/pendencias')}
-              className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ambar"
+              className="mt-2 text-[13px] font-semibold text-grafite"
             >
               {fila} lançamento{fila > 1 ? 's' : ''} na fila — tocar para enviar
             </button>
@@ -298,7 +306,7 @@ export default function AppShell() {
                 )}
                 <button
                   type="button"
-                  className="font-mono text-[10px] uppercase tracking-wider text-aco"
+                  className="text-[13px] font-medium text-aco"
                   onClick={() => {
                     sessionStorage.setItem('premag-instalar', '1')
                     setEsconderInstalar(true)
@@ -314,7 +322,7 @@ export default function AppShell() {
           </div>
         </main>
 
-        <nav className="z-40 shrink-0 border-t border-white/5 bg-grafite pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1">
+        <nav className="z-40 shrink-0 border-t border-linha bg-papel pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1">
           <div className="flex">
             {abas.map((aba) => {
               const ativa = abaAtiva?.label === aba.label
@@ -322,13 +330,13 @@ export default function AppShell() {
                 <NavLink
                   key={aba.to + aba.label}
                   to={aba.to}
-                  className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[9px] uppercase tracking-[0.12em] transition ${
-                    ativa ? 'text-ambar' : 'text-[#8b939a]'
+                  className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition ${
+                    ativa ? 'text-grafite' : 'text-aco'
                   }`}
                 >
-                  {ativa && <span className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-ambar" />}
                   <IconeAba tipo={aba.icone} />
                   <span>{aba.label}</span>
+                  {ativa && <span className="mt-0.5 h-1 w-1 rounded-full bg-ambar" />}
                 </NavLink>
               )
             })}

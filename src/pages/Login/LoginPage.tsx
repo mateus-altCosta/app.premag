@@ -44,35 +44,33 @@ export default function LoginPage() {
     <div className="app-frame flex min-h-dvh items-center justify-center px-5 py-10">
       <form
         onSubmit={onSubmit}
-        className="rise-in w-full max-w-[400px] rounded-2xl border border-white/10 bg-[#171b21]/90 p-6 shadow-2xl backdrop-blur-md sm:p-8"
+        className="rise-in w-full max-w-[400px] rounded-2xl border border-linha bg-papel p-6 shadow-sm sm:p-8"
       >
         <div className="flex items-center gap-3">
-          <Marca className="h-11 w-11 text-xl" />
+          <Marca className="h-10 w-10 text-base" />
           <div>
-            <h1 className="font-disp text-4xl tracking-wide text-papel">PREMAG</h1>
-            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-ambar">
-              Apropriação de mão de obra
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight text-grafite">PREMAG</h1>
+            <p className="mt-0.5 text-[13px] font-medium text-aco">Apropriação de mão de obra</p>
           </div>
         </div>
 
-        <p className="mt-6 text-sm leading-6 text-[#9aa2a9]">
+        <p className="mt-6 text-sm leading-6 text-aco">
           Entre com o usuário da planta. O apontamento do dia continua no aparelho se a rede cair.
         </p>
 
-        <label className="label mt-7 text-[#8b939a]">Usuário</label>
+        <label className="label mt-7">Usuário</label>
         <input
-          className="input border-[#2c3238] bg-[#1c2126] text-papel focus:border-ambar"
+          className="input"
           value={usuario}
           onChange={(e) => setUsuario(e.target.value)}
           autoComplete="username"
           required
         />
 
-        <label className="label mt-4 text-[#8b939a]">Senha</label>
+        <label className="label mt-4">Senha</label>
         <input
           type="password"
-          className="input border-[#2c3238] bg-[#1c2126] text-papel focus:border-ambar"
+          className="input"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           autoComplete="current-password"
@@ -81,14 +79,14 @@ export default function LoginPage() {
 
         {erro && <p className="alert alert-erro mt-4">{erro}</p>}
 
-        <button type="submit" disabled={enviando} className="btn-primary mt-6 h-14">
+        <button type="submit" disabled={enviando} className="btn-primary mt-6 h-12">
           {enviando ? 'Entrando…' : 'Entrar'}
         </button>
 
-        <p className="mt-6 flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#8b939a]">
+        <p className="mt-6 flex items-center gap-2 text-[12px] font-medium text-aco">
           <i
             className={`h-1.5 w-1.5 rounded-full ${
-              apiOk === null ? 'bg-[#8b939a]' : apiOk ? 'bg-emerald-400' : 'bg-alerta'
+              apiOk === null ? 'bg-aco' : apiOk ? 'bg-emerald-500' : 'bg-alerta'
             }`}
           />
           API {apiOk === null ? 'verificando' : apiOk ? 'online' : 'offline — não respondeu'}

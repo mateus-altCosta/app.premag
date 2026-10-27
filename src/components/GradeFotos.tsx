@@ -70,13 +70,13 @@ function Thumb({ foto, onAbrir }: { foto: FotoDto; onAbrir: () => void }) {
     <button
       type="button"
       onClick={() => src && onAbrir()}
-      className="overflow-hidden rounded-xl border border-linha bg-[#E4E1DA] text-left shadow-sm"
+      className="overflow-hidden rounded-xl border border-linha bg-muted text-left shadow-sm"
       aria-label="Ampliar foto"
     >
       {src ? (
         <img src={src} alt="" className="aspect-square w-full object-cover" />
       ) : (
-        <div className="aspect-square bg-[#CFCCC5]" />
+        <div className="aspect-square bg-linha" />
       )}
       <p className="truncate px-1 py-0.5 font-mono text-[9px] uppercase text-aco">
         {horaFoto(foto)} · {rotuloTipo(foto)}

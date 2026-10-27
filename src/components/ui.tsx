@@ -53,7 +53,7 @@ export function Chip({
 export function Marca({ className = '' }: { className?: string }) {
   return (
     <span
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-lg bg-ambar font-disp text-lg tracking-wide text-grafite ${className}`}
+      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl bg-ambar text-[15px] font-bold tracking-tight text-grafite ${className}`}
       aria-hidden
     >
       P

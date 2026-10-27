@@ -436,7 +436,7 @@ export default function ColaboradorPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-papel font-disp text-2xl"
                   onClick={() => setHoraIni((h) => ajustar(h, -5, origemGap))}
                 >
                   −
@@ -447,7 +447,7 @@ export default function ColaboradorPage() {
                 </div>
                 <button
                   type="button"
-                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-papel font-disp text-2xl"
                   onClick={() => setHoraIni((h) => ajustar(h, 5, origemGap))}
                 >
                   +
@@ -505,7 +505,7 @@ export default function ColaboradorPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-papel font-disp text-2xl"
                   onClick={() => setHoraFim((h) => ajustar(h, -5, paraMinutos(aberto.horaInicio) + 5))}
                 >
                   −
@@ -518,7 +518,7 @@ export default function ColaboradorPage() {
                 </div>
                 <button
                   type="button"
-                  className="h-14 w-14 rounded-xl border border-linha bg-white font-disp text-2xl"
+                  className="h-14 w-14 rounded-xl border border-linha bg-papel font-disp text-2xl"
                   onClick={() => setHoraFim((h) => ajustar(h, 5, paraMinutos(aberto.horaInicio) + 5))}
                 >
                   +
@@ -609,11 +609,11 @@ export default function ColaboradorPage() {
             <div>
               <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">Início</p>
               <div className="flex items-center gap-3">
-                <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraIni((h) => h - 5)}>
+                <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-papel font-disp text-2xl" onClick={() => setHoraIni((h) => h - 5)}>
                   −
                 </button>
                 <div className="flex-1 text-center font-disp text-3xl">{formatarHora(horaIni)}</div>
-                <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraIni((h) => h + 5)}>
+                <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-papel font-disp text-2xl" onClick={() => setHoraIni((h) => h + 5)}>
                   +
                 </button>
               </div>
@@ -622,11 +622,11 @@ export default function ColaboradorPage() {
               <div>
                 <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-aco">Término</p>
                 <div className="flex items-center gap-3">
-                  <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraFim((h) => h - 5)}>
+                  <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-papel font-disp text-2xl" onClick={() => setHoraFim((h) => h - 5)}>
                     −
                   </button>
                   <div className="flex-1 text-center font-disp text-3xl">{formatarHora(horaFim)}</div>
-                  <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-white font-disp text-2xl" onClick={() => setHoraFim((h) => h + 5)}>
+                  <button type="button" className="h-12 w-12 rounded-xl border border-linha bg-papel font-disp text-2xl" onClick={() => setHoraFim((h) => h + 5)}>
                     +
                   </button>
                 </div>

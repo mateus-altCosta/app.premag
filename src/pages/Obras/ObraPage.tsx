@@ -241,7 +241,7 @@ export default function ObraPage() {
               <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-aco">
                 {fmt(f.quantidadeConcluida)} de {fmt(f.quantidadePrevista)} {f.unidade} · equipe {f.equipeNome ?? '—'}
               </p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E4E1DA]">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                 <div className="h-full rounded-full bg-ambar" style={{ width: `${Math.min(100, f.percentualAvanco)}%` }} />
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">

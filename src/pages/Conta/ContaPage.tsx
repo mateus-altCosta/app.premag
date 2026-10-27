@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cadastroService, mensagemErro } from '../../app/services/premag/cadastro.service'
 import type { MotivoParadaDto, UsuarioListaDto } from '../../app/models/entity/Cadastro.dto'
-import { ativarPush, desligarPush } from '../../app/services/premag/push'
 import { api } from '../../app/services/premag/api.service'
 import { loadSession } from '../../app/services/premag/session'
 import { podeGerir } from '../../app/services/premag/perfil'
@@ -78,8 +77,10 @@ export default function ContaPage() {
       </button>
       <p className="page-title">Conta</p>
       <p className="page-sub">
-        Troca de senha{gerir ? ', jornada da planta e motivos de parada' : ''} e notificações neste aparelho.
+        Troca de senha{gerir ? ', jornada da planta e motivos de parada' : ''}.
       </p>
+      {erro && <p className="alert alert-erro mt-3">{erro}</p>}
+      {ok && <p className="alert alert-ok mt-3">{ok}</p>}
 
       {gerir && (
         <form
@@ -331,8 +332,6 @@ export default function ContaPage() {
           minLength={8}
           required
         />
-        {erro && <p className="alert alert-erro mt-2">{erro}</p>}
-        {ok && <p className="alert alert-ok mt-2">{ok}</p>}
         <button
           type="submit"
           disabled={enviando}
@@ -413,32 +412,6 @@ export default function ContaPage() {
           </button>
         </form>
       )}
-
-      <div className="mt-3 card-pad">
-        <p className="kicker">Notificações</p>
-        <button
-          type="button"
-          className="btn-link mt-2"
-          onClick={async () => {
-            const r = await ativarPush()
-            setOk(r === 'ok' ? 'Notificações ativas neste aparelho.' : null)
-            setErro(r === 'ok' ? null : 'Não foi possível ativar. Use HTTPS e aceite o pedido do navegador.')
-          }}
-        >
-          Ativar neste aparelho
-        </button>
-        <button
-          type="button"
-          className="mt-2 block font-mono text-[10px] uppercase tracking-wider text-aco"
-          onClick={async () => {
-            await desligarPush()
-            setOk('Notificações desligadas neste aparelho.')
-            setErro(null)
-          }}
-        >
-          Desligar neste aparelho
-        </button>
-      </div>
     </div>
   )
 }

@@ -20,8 +20,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        theme_color: '#12151A',
-        background_color: '#12151A',
+        theme_color: '#F4F6F8',
+        background_color: '#F4F6F8',
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],

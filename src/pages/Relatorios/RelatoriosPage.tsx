@@ -199,7 +199,7 @@ export default function RelatoriosPage() {
                     <p className="font-disp text-[16px] leading-tight tracking-wide">{l.frenteNome}</p>
                     <p className="shrink-0 font-disp text-xl tabular-nums">{n0(l.percentualAvanco)}%</p>
                   </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#E4E1DA]">
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full bg-ambar"
                       style={{ width: `${Math.min(100, Math.max(0, l.percentualAvanco))}%` }}

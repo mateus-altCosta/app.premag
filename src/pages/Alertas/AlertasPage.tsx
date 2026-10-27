@@ -132,17 +132,17 @@ export default function AlertasPage() {
 
   return (
     <div>
-      <div className="rounded-xl border border-white/10 bg-grafite p-4 text-papel shadow-sm">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ambar">Regra de escalonamento</p>
-        <p className="mt-1.5 text-sm text-[#9aa2a9]">
+      <div className="card-pad">
+        <p className="kicker">Regra de escalonamento</p>
+        <p className="mt-1.5 text-sm text-aco">
           Colaborador presente e fora de qualquer frente por mais de 60 minutos corridos gera notificação para Gerência
           e Diretoria. O relógio desconta o intervalo e ignora faltas, férias e afastados.
         </p>
         <button
           type="button"
-          className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ambar"
+          className="btn-link mt-3"
           onClick={async () => {
-            const r = await ativarPush()
+            const r = await ativarPush('manual')
             setPushMsg(
               r === 'ok'
                 ? 'Notificações ativas neste aparelho.'
@@ -158,7 +158,7 @@ export default function AlertasPage() {
         </button>
         <button
           type="button"
-          className="mt-2 block font-mono text-[10px] uppercase tracking-wider text-[#9aa2a9]"
+          className="mt-2 block text-[13px] font-medium text-aco"
           onClick={async () => {
             await desligarPush()
             setPushMsg('Notificações desligadas neste aparelho.')
@@ -166,7 +166,7 @@ export default function AlertasPage() {
         >
           Desligar notificações neste aparelho
         </button>
-        {pushMsg && <p className="mt-2 text-sm text-[#9aa2a9]">{pushMsg}</p>}
+        {pushMsg && <p className="mt-2 text-sm text-aco">{pushMsg}</p>}
       </div>
       {erro && <p className="alert alert-erro mt-3">{erro}</p>}
       <div className="seg mt-3">

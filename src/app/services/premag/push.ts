@@ -1,5 +1,11 @@
 import { api } from './api.service'
 
+const PREF = 'premag-push'
+
+export function pushOptOut(): boolean {
+  return localStorage.getItem(PREF) === '0'
+}
+
 function urlBase64ParaBytes(base64: string): Uint8Array {
   const pad = '='.repeat((4 - (base64.length % 4)) % 4)
   const raw = atob(base64.replace(/-/g, '+').replace(/_/g, '/') + pad)
@@ -13,7 +19,10 @@ async function registroSw(): Promise<ServiceWorkerRegistration | null> {
   return navigator.serviceWorker.ready
 }
 
-export async function ativarPush(): Promise<'ok' | 'sem-suporte' | 'negado' | 'desligado'> {
+export async function ativarPush(
+  origem: 'auto' | 'manual' = 'auto',
+): Promise<'ok' | 'sem-suporte' | 'negado' | 'desligado'> {
+  if (origem === 'auto' && pushOptOut()) return 'desligado'
   const reg = await registroSw()
   if (!reg) return 'sem-suporte'
   if (Notification.permission === 'denied') return 'negado'
@@ -45,6 +54,7 @@ export async function ativarPush(): Promise<'ok' | 'sem-suporte' | 'negado' | 'd
       p256dh: json.keys?.p256dh,
       auth: json.keys?.auth,
     })
+    localStorage.setItem(PREF, '1')
     return 'ok'
   } catch {
     return 'desligado'
@@ -52,6 +62,7 @@ export async function ativarPush(): Promise<'ok' | 'sem-suporte' | 'negado' | 'd
 }
 
 export async function desligarPush(): Promise<void> {
+  localStorage.setItem(PREF, '0')
   const reg = await registroSw()
   const sub = await reg?.pushManager.getSubscription()
   if (sub) {

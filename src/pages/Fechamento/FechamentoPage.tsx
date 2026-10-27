@@ -94,22 +94,19 @@ export default function FechamentoPage() {
     <div>
       {erro && <p className="alert alert-erro mb-3">{erro}</p>}
 
-      <div className="rounded-xl border border-white/10 bg-grafite p-4 text-papel shadow-sm">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ambar">Fechamento do dia</p>
-        <p className="mt-1 font-disp text-2xl tracking-wide">{dia ? fmtData(dia.data) : '…'}</p>
-        <p className="mt-2 text-sm text-[#9aa2a9]">
+      <div className="card-pad">
+        <p className="kicker">Fechamento do dia</p>
+        <p className="page-title mt-1 text-[1.4rem]">{dia ? fmtData(dia.data) : '…'}</p>
+        <p className="mt-2 text-sm leading-6 text-aco">
           Confirma que o apontamento da equipe está completo. Depois disso ninguém inicia, encerra, lança quantidade
           nem anexa foto neste dia — até a gerência reabrir com motivo. Passados {dia?.diasFechamento ?? 3} dias o
           calendário fecha sozinho e não reabre.
         </p>
-        <Link
-          to={diarioDoDia(data, equipeId)}
-          className="mt-3 inline-block font-mono text-[10px] uppercase tracking-wider text-ambar hover:text-papel"
-        >
+        <Link to={diarioDoDia(data, equipeId)} className="btn-link mt-3 inline-block">
           Abrir diário do dia
         </Link>
         {gerir && (
-          <Link to="/historico" className="mt-2 block font-mono text-[10px] uppercase tracking-wider text-ambar">
+          <Link to="/historico" className="mt-2 block text-[13px] font-semibold text-aco">
             Histórico
           </Link>
         )}

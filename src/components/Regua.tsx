@@ -33,7 +33,7 @@ export default function Regua({
   if (fim - cur > 1) segs.push({ w: fim - cur, cor: null })
 
   return (
-    <div className="flex h-2 overflow-hidden rounded-full bg-[#E4E1DA]">
+    <div className="flex h-2 overflow-hidden rounded-full bg-muted">
       {segs.map((s, i) => (
         <span
           key={i}
@@ -43,7 +43,7 @@ export default function Regua({
             background: s.cor ?? undefined,
             backgroundImage: s.cor
               ? undefined
-              : 'repeating-linear-gradient(135deg,#E8E6E1 0 6px,#B9B5AC 6px 12px)',
+              : 'repeating-linear-gradient(135deg, var(--linha) 0 6px, var(--aco) 6px 12px)',
             opacity: !s.cor && cur > almocoIni && cur < almocoFim ? 0.7 : 1,
           }}
         />
